@@ -90,6 +90,7 @@ Defined in header "Memory.h"
 
 [Memory Pools](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__PoolMgmt.html) are fixed-size blocks of memory that are thread-safe.
 
+class sys::memory\_pool satisfies [allocator completeness requirements](http://en.cppreference.com/w/cpp/concept/Allocator#Allocator_completeness_requirements) and provides a compatible interface with [std::allocator](http://en.cppreference.com/w/cpp/concept/Allocator) but is not [CopyConstructible](http://en.cppreference.com/w/cpp/concept/CopyConstructible). In consequence, don't try to use this class with STL containers, because this ones aren't designed to works with fixed size allocators.
 
 class sys::memory\_pool\_delete is a Deleter (like [std::default_delete](http://en.cppreference.com/w/cpp/memory/default_delete)) associated to an memory pool.
  
