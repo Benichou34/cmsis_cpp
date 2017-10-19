@@ -15,7 +15,7 @@ uint32_t osRtxErrorNotify (uint32_t code, void *object_id)
 {
 	try
 	{
-		throw std::system_error(cmsis::error_code(code), cmsis::internal::str_error("osRtxErrorNotify", object_id));
+		throw std::system_error(code, cmsis::os_category(), cmsis::internal::str_error("osRtxErrorNotify", object_id));
 	}
 	catch(std::exception& e)
 	{

@@ -80,7 +80,7 @@ namespace cmsis
 
 		id get_id() const;
 
-		native_handle_type native_handle() const;
+		native_handle_type native_handle();
 
 		void swap(thread& __t);
 

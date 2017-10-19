@@ -59,8 +59,8 @@ namespace cmsis
 
 		mask_type get() const;
 
-		void set(mask_type mask);
-		void clear(mask_type mask = static_cast<mask_type>(-1));
+		mask_type set(mask_type mask);
+		mask_type clear(mask_type mask = static_cast<mask_type>(-1));
 		mask_type wait(mask_type mask, wait_flag flg = wait_flag::any);
 
 		template<class Rep, class Period>

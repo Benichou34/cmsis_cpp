@@ -38,7 +38,7 @@ namespace cmsis
 		{
 			m_id = osMemoryPoolNew(static_cast<uint32_t>(count), static_cast<uint32_t>(n), NULL);
 			if (!m_id)
-				throw std::system_error(cmsis::error_code(osError), "osMemoryPoolNew");
+				throw std::system_error(osError, os_category(), "osMemoryPoolNew");
 		}
 
 		base_memory_pool::base_memory_pool(base_memory_pool&& other) :
@@ -53,7 +53,7 @@ namespace cmsis
 			{
 				osStatus_t sta = osMemoryPoolDelete(m_id);
 				if (sta != osOK)
-					throw std::system_error(cmsis::error_code(sta), internal::str_error("osMemoryPoolDelete", m_id));
+					throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
 			}
 		}
 
@@ -65,7 +65,7 @@ namespace cmsis
 				{
 					osStatus_t sta = osMemoryPoolDelete(m_id);
 					if (sta != osOK)
-						throw std::system_error(cmsis::error_code(sta), internal::str_error("osMemoryPoolDelete", m_id));
+						throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
 					m_id = 0;
 				}
 
@@ -91,7 +91,7 @@ namespace cmsis
 		{
 			osStatus_t sta = osMemoryPoolFree(m_id, p);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osMemoryPoolFree", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolFree", m_id));
 		}
 
 		size_t base_memory_pool::max_size() const noexcept

@@ -33,13 +33,7 @@
 namespace cmsis
 {
 	const std::error_category& os_category();
-
-	class error_code : public std::error_code
-	{
-	public:
-		error_code(int ec = 0) : std::error_code(ec, os_category()) {}
-		~error_code() = default;
-	};
+	const std::error_category& flags_category();
 
 	namespace internal
 	{

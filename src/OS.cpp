@@ -3,7 +3,8 @@
 #include "OSException.h"
 #include "cmsis_os2.h"
 
-extern uint32_t SystemCoreClock;        /**< System Clock Frequency (Core Clock) */
+extern "C" uint32_t SystemCoreClock;         /**< System Clock Frequency (Core Clock) */
+extern "C" void SystemCoreClockUpdate(void); /**< Updates the variable SystemCoreClock */
 
 namespace cmsis
 {
@@ -16,7 +17,7 @@ namespace cmsis
 
 			osStatus_t sta = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
 			if(sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), "osKernelGetInfo");
+				throw std::system_error(sta, os_category(), "osKernelGetInfo");
 
 			return std::string(infobuf);
 		}
@@ -25,7 +26,7 @@ namespace cmsis
 		{
 			uint32_t tick = osKernelGetTickFreq();
 			if (!tick)
-				throw std::system_error(cmsis::error_code(osError), "osKernelGetTickFreq");
+				throw std::system_error(osError, os_category(), "osKernelGetTickFreq");
 
 			return tick;
 		}
@@ -40,7 +41,7 @@ namespace cmsis
 			{
 				osStatus_t sta = osKernelInitialize();
 				if (sta != osOK)
-					throw std::system_error(cmsis::error_code(sta), "osKernelInitialize");
+					throw std::system_error(sta, os_category(), "osKernelInitialize");
 			}
 		}
 
@@ -52,7 +53,7 @@ namespace cmsis
 		{
 			osStatus_t sta = osKernelStart();
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), "osKernelStart");
+				throw std::system_error(sta, os_category(), "osKernelStart");
 		}
 	}
 
@@ -60,8 +61,9 @@ namespace cmsis
 	{
 		uint32_t clock_frequency()
 		{
+			SystemCoreClockUpdate();
 			if (!SystemCoreClock)
-				throw std::system_error(cmsis::error_code(osError), "SystemCoreClock");
+				throw std::system_error(osError, os_category(), "SystemCoreClock");
 
 			return SystemCoreClock;
 		}
@@ -79,17 +81,17 @@ namespace cmsis
 	{
 		m_previous_lock_state = osKernelLock();
 		if (m_previous_lock_state < 0)
-			throw std::system_error(cmsis::error_code(m_previous_lock_state), "osKernelLock");
+			throw std::system_error(m_previous_lock_state, os_category(), "osKernelLock");
 	}
 
 	void dispatch::unlock()
 	{
 		if (m_previous_lock_state < 0)
-			throw std::system_error(cmsis::error_code(m_previous_lock_state), "Bad kernel previous state");
+			throw std::system_error(m_previous_lock_state, os_category(), "Bad kernel previous state");
 
 		m_previous_lock_state = osKernelRestoreLock(m_previous_lock_state);
 		if (m_previous_lock_state < 0)
-			throw std::system_error(cmsis::error_code(m_previous_lock_state), "osKernelRestoreLock");
+			throw std::system_error(m_previous_lock_state, os_category(), "osKernelRestoreLock");
 	}
 
 	bool dispatch::locked()

@@ -21,7 +21,7 @@ namespace cmsis
 
 			m_id = osThreadNew(runnableMethodStatic, this, &m_attr);
 			if (m_id == 0)
-				throw std::system_error(cmsis::error_code(osError), "osThreadNew");
+				throw std::system_error(osError, os_category(), "osThreadNew");
 		}
 
 		thread_impl(const thread_impl&) = delete;
@@ -31,14 +31,14 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadTerminate(m_id);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osThreadTerminate", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osThreadTerminate", m_id));
 		}
 
 		void join()
 		{
 			osStatus_t sta = osThreadJoin(m_id);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osThreadJoin", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osThreadJoin", m_id));
 
 			m_detached.store(true);
 		}
@@ -47,7 +47,7 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadDetach(m_id);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osThreadDetach", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osThreadDetach", m_id));
 
 			m_detached.store(true);
 		}
@@ -141,7 +141,7 @@ namespace cmsis
 		return thread::id(m_pThread->get_id());
 	}
 
-	thread::native_handle_type thread::native_handle() const
+	thread::native_handle_type thread::native_handle()
 	{
 		return get_id().m_tid;
 	}
@@ -162,14 +162,14 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadYield();
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), "osThreadYield");
+				throw std::system_error(sta, os_category(), "osThreadYield");
 		}
 
 		thread::id get_id()
 		{
 			osThreadId_t tid = osThreadGetId();
 			if (tid == NULL)
-				throw std::system_error(cmsis::error_code(osErrorResource), "osThreadGetId");
+				throw std::system_error(osErrorResource, os_category(), "osThreadGetId");
 
 			return thread::id(tid);
 		}
@@ -186,7 +186,7 @@ namespace cmsis
 
 					osStatus_t sta = osDelay(ticks);
 					if (sta != osOK)
-						throw std::system_error(cmsis::error_code(sta), "osDelay");
+						throw std::system_error(sta, os_category(), "osDelay");
 				}
 			}
 		}

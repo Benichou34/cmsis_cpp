@@ -15,21 +15,21 @@ namespace cmsis
 			m_usec(usec)
 		{
 			if (!m_Callback)
-				throw std::system_error(cmsis::error_code(osErrorParameter), "timer: missing callback");
+				throw std::system_error(osErrorParameter, os_category(), "timer: missing callback");
 
 			if (m_usec < std::chrono::microseconds::zero())
-				throw std::system_error(cmsis::error_code(osErrorParameter), "base_timed_mutex: negative timer");
+				throw std::system_error(osErrorParameter, os_category(), "base_timed_mutex: negative timer");
 
 			m_id = osTimerNew(handler, bOnce ? osTimerOnce : osTimerPeriodic, this, NULL);
 			if (m_id == 0)
-				throw std::system_error(cmsis::error_code(osError), "osTimerNew");
+				throw std::system_error(osError, os_category(), "osTimerNew");
 		}
 
 		~cmsis_timer() noexcept(false)
 		{
 			osStatus_t sta = osTimerDelete(m_id);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osTimerDelete", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osTimerDelete", m_id));
 		}
 
 		void start()
@@ -41,14 +41,14 @@ namespace cmsis
 
 			osStatus_t sta = osTimerStart(m_id, ticks);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osTimerStart", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osTimerStart", m_id));
 		}
 
 		void stop()
 		{
 			osStatus_t sta = osTimerStop(m_id);
 			if (sta != osOK)
-				throw std::system_error(cmsis::error_code(sta), internal::str_error("osTimerStop", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osTimerStop", m_id));
 		}
 
 		bool running() const
@@ -112,7 +112,7 @@ namespace cmsis
 	void timer::start()
 	{
 		if (!m_pImplTimer)
-			throw std::system_error(cmsis::error_code(osErrorResource), "timer::start");
+			throw std::system_error(osErrorResource, os_category(), "timer::start");
 
 		m_pImplTimer->start();
 	}
@@ -120,7 +120,7 @@ namespace cmsis
 	void timer::stop()
 	{
 		if (!m_pImplTimer)
-			throw std::system_error(cmsis::error_code(osErrorResource), "timer::stop");
+			throw std::system_error(osErrorResource, os_category(), "timer::stop");
 
 		m_pImplTimer->stop();
  	}

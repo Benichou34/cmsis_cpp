@@ -5,14 +5,14 @@
 
 namespace
 {
-	class cmsis_error_category : public std::error_category
+	class cmsis_os_error_category : public std::error_category
 	{
 	public:
-		cmsis_error_category(const cmsis_error_category&) = delete;
-		constexpr cmsis_error_category() = default;
-		virtual ~cmsis_error_category() = default;
+		cmsis_os_error_category(const cmsis_os_error_category&) = delete;
+		constexpr cmsis_os_error_category() = default;
+		virtual ~cmsis_os_error_category() = default;
 
-		virtual const char* name() const noexcept override { return "cmsis"; }
+		virtual const char* name() const noexcept override { return "cmsis os"; }
 
 		virtual std::string message(int condition) const noexcept override
 		{
@@ -32,7 +32,31 @@ namespace
 			case osRtxErrorClibSpace: return "Standard C/C++ library libspace not available: increase OS_THREAD_LIBSPACE_NUM";
 			case osRtxErrorClibMutex: return "Standard C/C++ library mutex initialization failed";
 
-			default : return "unknown error";
+			default : return "Unknown error";
+			}
+		}
+	};
+
+	class cmsis_flag_error_category : public std::error_category
+	{
+	public:
+		cmsis_flag_error_category(const cmsis_flag_error_category&) = delete;
+		constexpr cmsis_flag_error_category() = default;
+		virtual ~cmsis_flag_error_category() = default;
+
+		virtual const char* name() const noexcept override { return "cmsis flag"; }
+
+		virtual std::string message(int condition) const noexcept override
+		{
+			switch (condition)
+			{
+			case osFlagsErrorUnknown  : return "Generic error";
+			case osFlagsErrorTimeout  : return "A timeout was specified and the specified flags were not set, when the timeout occurred";
+			case osFlagsErrorResource : return "Try to get a flag that was not set and timeout 0 was specified, or the specified object identifier is corrupt or invalid";
+			case osFlagsErrorParameter: return "A given parameter is wrong";
+			case osFlagsErrorISR      : return "Not allowed in ISR context: the function cannot be called from interrupt service routines";
+
+			default : return "Unknown error";
 			}
 		}
 	};
@@ -42,7 +66,13 @@ namespace cmsis
 {
 	const std::error_category& os_category()
 	{
-		static cmsis_error_category osErrorCategory;
+		static cmsis_os_error_category osErrorCategory;
+		return osErrorCategory;
+	}
+
+	const std::error_category& flags_category()
+	{
+		static cmsis_flag_error_category osErrorCategory;
 		return osErrorCategory;
 	}
 
