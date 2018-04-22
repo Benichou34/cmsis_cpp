@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2018, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -39,7 +39,7 @@ namespace cmsis
 
 		enum class status { no_timeout, timeout };
 
-		semaphore(size_t ini_count, size_t max_count);
+		semaphore(size_t ini_count, size_t max_count = 0xFFFF);
 		~semaphore() noexcept(false);
 
 		void post();
@@ -48,7 +48,7 @@ namespace cmsis
 		template<class Rep, class Period>
 		status wait_for(const std::chrono::duration<Rep, Period>& rel_time)
 		{
-			return wait_for_usec(rel_time);
+			return wait_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(rel_time));
 		}
 
 		template<class Clock, class Duration>
