@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2018, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,11 +29,12 @@
 #define CMSIS_OS_H_
 
 #include <string>
+#include <functional>
 
 namespace cmsis
 {
 	/// Kernel Information and Control.
-	namespace os
+	namespace kernel
 	{
 		/// Get RTOS Kernel version.
 		/// \return string that contains version information.
@@ -53,6 +54,10 @@ namespace cmsis
 		/// In case of success, this function will never returns.
 		/// \exception In case of failure, throws a std::system_error exception.
 		void start();
+
+		/// Start the idle handler called by the idle thread.
+		/// \exception In case of failure, throws a std::system_error exception.
+		void set_idle_handler(std::function<void()>&& handler);
 	}
 
 	namespace core
@@ -86,7 +91,7 @@ namespace cmsis
 
 namespace sys
 {
-	namespace os = cmsis::os;
+	namespace kernel = cmsis::kernel;
 	namespace core = cmsis::core;
 	using dispatch = cmsis::dispatch;
 }

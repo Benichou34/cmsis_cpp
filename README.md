@@ -44,16 +44,16 @@ This part is a group of some CMSIS specific classes, but as close as possible of
 ### Kernel Information and Control
 Defined in header "OS.h"
 
-#### std::string sys::os::version()
+#### std::string sys::kernel::version()
 Get RTOS Kernel version. Returns a string that contains version information. In case of failure, throws a std::system_error exception.
 
-#### uint32_t sys::os::tick_frequency();
+#### uint32_t sys::kernel::tick_frequency();
 Get RTOS Kernel tick frequency in Hz. Returns the frequency of the current RTOS kernel tick. In case of failure, throws a std::system_error exception.
 
-#### void sys::os::initialize()
+#### void sys::kernel::initialize()
 Initialize the RTOS Kernel. In case of failure, throws a std::system_error exception.
 
-#### void sys::os::start()
+#### void sys::kernel::start()
 Start the RTOS Kernel scheduler. In case of success, this function will never returns. In case of failure, throws a std::system_error exception.
 
 #### uint32_t sys::core::clock_frequency();
@@ -106,11 +106,11 @@ Be carreful with memory pools and smart pointers. Don't delete a memory pool wit
 
 int main()
 {
-	cmsis::os::initialize();
+	cmsis::kernel::initialize();
 
 	std::thread main_thread([]
 	{
-		std::cout << cmsis::os::version() << std::endl;
+		std::cout << cmsis::kernel::version() << std::endl;
 		std::cout << "Core Clock: " << sys::core::clock_frequency() << "Hz" << std::endl;
 
 		try
@@ -139,7 +139,7 @@ int main()
 		}
 	});
 
-	cmsis::os::start();
+	cmsis::kernel::start();
 	return 0;
 }
 ```
