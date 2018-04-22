@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2018, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,7 +67,7 @@ namespace cmsis
 		template<typename _Callable, typename... _Args>
 		explicit thread(_Callable&& __f, _Args&&... __args) : thread(make_routine(std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...))) { }
 
-		virtual ~thread();
+		~thread();
 
 		thread& operator=(const thread&) = delete;
 		thread& operator=(thread&& __t);
@@ -151,7 +151,7 @@ namespace cmsis
 		template<class Rep, class Period>
 		void sleep_for(const std::chrono::duration<Rep, Period>& sleep_duration)
 		{
-			internal::sleep_for_usec(sleep_duration);
+			internal::sleep_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(sleep_duration));
 		}
 
 		template<class Clock, class Duration>
