@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2018, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,9 +41,13 @@ namespace cmsis
 		public:
 			message_queue_impl(size_t max_len, size_t ele_len);
 			message_queue_impl(const message_queue_impl&) = delete;
+			message_queue_impl(message_queue_impl&& t);
 			~message_queue_impl() noexcept(false);
 
+			void swap(message_queue_impl& t);
+
 			message_queue_impl& operator=(const message_queue_impl&) = delete;
+			message_queue_impl& operator=(message_queue_impl&& t);
 
 			void send(const void* data);
 			bool send(const void* data, std::chrono::microseconds usec);
@@ -60,115 +64,107 @@ namespace cmsis
 	}
 
 	template <class T, typename Enable = void> // Default implementation
-	class message_queue
+	class message_queue : private internal::message_queue_impl
 	{
 	public:
 		typedef T element_type;
 		enum class status { no_timeout, timeout };
 
-		message_queue(size_t max_len) : m_pImpl(std::make_unique<internal::message_queue_impl>(max_len, sizeof(T*))) {}
+		message_queue(size_t max_len) : internal::message_queue_impl(max_len, sizeof(T*)) {}
 		message_queue(const message_queue&) = delete;
-		message_queue(message_queue&& t) : m_pImpl(std::move(t.m_pImpl)) {}
+		message_queue(message_queue&& t) : internal::message_queue_impl(std::move(t)) {}
 		~message_queue() = default;
 
-		void swap(message_queue& t) noexcept { std::swap(m_pImpl, t.m_pImpl); }
+		void swap(message_queue& t) noexcept { internal::message_queue_impl::swap(t); }
 
 		message_queue& operator=(const message_queue&) = delete;
 		message_queue& operator=(message_queue&& t)
 		{
-			if (&t != this)
-				m_pImpl = std::move(t.m_pImpl);
-
+			internal::message_queue_impl::operator=(std::move(t));
 			return *this;
 		}
 
 		void send(std::unique_ptr<element_type>&& data)
 		{
-			m_pImpl->send(&data.release());
+			element_type* ptr = data.release();
+			internal::message_queue_impl::send(&ptr);
 		}
 
 		template<class Rep, class Period>
 		status send(std::unique_ptr<element_type>&& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
-			return m_pImpl->send(&data.release(), wait_time) ? status::no_timeout : status::timeout;
+			element_type* ptr = data.release();
+			return internal::message_queue_impl::send(&ptr, wait_time) ? status::no_timeout : status::timeout;
 		}
 
 		std::unique_ptr<element_type> receive()
 		{
-			return std::unique_ptr<element_type>(static_cast<element_type*>(m_pImpl->receive()));
+			return std::unique_ptr<element_type>(static_cast<element_type*>(internal::message_queue_impl::receive()));
 		}
 
 		template<class Rep, class Period>
 		status receive(std::unique_ptr<element_type>& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			void* ptr = nullptr;
-			bool ret = m_pImpl->receive(ptr, wait_time);
+			bool ret = internal::message_queue_impl::receive(ptr, wait_time);
 			data.reset(static_cast<element_type*>(ptr));
 			return ret ? status::no_timeout : status::timeout;
 		}
 
 		bool empty() const { return size() == 0; }
-		size_t size() const { return m_pImpl->size(); }
-		size_t capacity() const { return m_pImpl->capacity(); }
-
-	private:
-		std::unique_ptr<internal::message_queue_impl> m_pImpl;
+		size_t size() const { return internal::message_queue_impl::size(); }
+		size_t capacity() const { return internal::message_queue_impl::capacity(); }
 	};
 
 	template <class T> // Partial specialization for pointer
-	class message_queue<T, typename std::enable_if<std::is_pointer<T>::value>::type>
+	class message_queue<T, typename std::enable_if<std::is_pointer<T>::value>::type> : private internal::message_queue_impl
 	{
 	public:
 		typedef T element_type;
 		enum class status { no_timeout, timeout };
 
-		message_queue(size_t max_len) : m_pImpl(std::make_unique<internal::message_queue_impl>(max_len, sizeof(T))) {}
+		message_queue(size_t max_len) : internal::message_queue_impl(max_len, sizeof(T)) {}
 		message_queue(const message_queue&) = delete;
-		message_queue(message_queue&& t) : m_pImpl(std::move(t.m_pImpl)) {}
+		message_queue(message_queue&& t) : internal::message_queue_impl(std::move(t)) {}
 		~message_queue() = default;
 
-		void swap(message_queue& t) noexcept { std::swap(m_pImpl, t.m_pImpl); }
+		void swap(message_queue& t) noexcept { internal::message_queue_impl::swap(t); }
 
 		message_queue& operator=(const message_queue&) = delete;
 		message_queue& operator=(message_queue&& t)
 		{
-			if (&t != this)
-				m_pImpl = std::move(t.m_pImpl);
-
+			internal::message_queue_impl::operator=(std::move(t));
 			return *this;
 		}
 
 		void send(element_type ptr)
 		{
-			m_pImpl->send(&ptr);
+			internal::message_queue_impl::send(&ptr);
 		}
 
 		template<class Rep, class Period>
 		status send(element_type ptr, const std::chrono::duration<Rep, Period>& wait_time)
 		{
-			return m_pImpl->send(&ptr, wait_time) ? status::no_timeout : status::timeout;
+			return internal::message_queue_impl::send(&ptr, wait_time) ? status::no_timeout : status::timeout;
 		}
 
 		element_type receive()
 		{
-			return static_cast<element_type>(m_pImpl->receive());
+			return static_cast<element_type>(internal::message_queue_impl::receive());
 		}
 
 		template<class Rep, class Period>
 		status receive(element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			void* ptr = nullptr;
-			bool ret = m_pImpl->receive(ptr, wait_time);
+			bool ret = internal::message_queue_impl::receive(ptr, wait_time);
 			data = static_cast<element_type>(ptr);
 			return ret ? status::no_timeout : status::timeout;
 		}
 
 		bool empty() const { return size() == 0; }
-		size_t size() const { return m_pImpl->size(); }
-		size_t capacity() const { return m_pImpl->capacity(); }
-
-	private:
-		std::unique_ptr<internal::message_queue_impl> m_pImpl;
+		size_t size() const { return internal::message_queue_impl::size(); }
+		size_t capacity() const { return internal::message_queue_impl::capacity(); }
 	};
 
 	template <class T>
