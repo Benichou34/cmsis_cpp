@@ -150,7 +150,7 @@ namespace cmsis
 
 	bool thread::joinable() const
 	{
-		return m_pThread->joinable();
+		return m_pThread && m_pThread->joinable();
 	}
 
 	void thread::detach()
@@ -163,7 +163,7 @@ namespace cmsis
 
 	thread::id thread::get_id() const
 	{
-		return thread::id(m_pThread->get_id());
+		return m_pThread ? thread::id(m_pThread->get_id()) : thread::id();
 	}
 
 	thread::native_handle_type thread::native_handle()
