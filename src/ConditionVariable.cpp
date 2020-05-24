@@ -61,13 +61,6 @@ namespace cmsis
 		if (!lock.owns_lock())
 			std::terminate();
 
-		if (usec < std::chrono::microseconds::zero())
-			throw std::system_error(osErrorParameter, os_category(), "condition_variable: negative timer");
-
-		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-		if (timeout > std::numeric_limits<uint32_t>::max())
-			timeout = osWaitForever;
-		
 		cmsis::binary_semaphore sema(0);
 		std::list<cmsis::binary_semaphore*>::iterator it;
 		{
