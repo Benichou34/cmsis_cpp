@@ -24,6 +24,14 @@ Mutexes are created with Priority inheritance protocol (osMutexPrioInherit flag)
 
 Mutex management functions cannot be called from [Interrupt Service Routines](https://arm-software.github.io/CMSIS_5/RTOS2/html/theory_of_operation.html#CMSIS_RTOS_ISR_Calls) (ISR), unlike a binary semaphore that can be released from an ISR.
 
+### Semaphore
+Defined in header "Semaphore.h"
+
+This header is part of the [thread support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<semaphore>](https://en.cppreference.com/w/cpp/thread/counting_semaphore) interfaces.
+You can directly use [std::counting_semaphore](https://en.cppreference.com/w/cpp/thread/counting_semaphore) and [std::binary_semaphore](https://en.cppreference.com/w/cpp/thread/counting_semaphore) classes.
+
+[Semaphores](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__SemaphoreMgmt.html) are used to manage and protect access to shared resources.
+
 ### Chrono
 Defined in header "Chrono.h"
 
@@ -53,18 +61,13 @@ Get RTOS Kernel tick frequency in Hz. Returns the frequency of the current RTOS 
 #### void sys::kernel::initialize()
 Initialize the RTOS Kernel. In case of failure, throws a std::system_error exception.
 
+If you want to use static C++ objects, the RTOS must be initialized before main(). In that case, call osKernelInitialize() at the end of SystemInit() function.
+
 #### void sys::kernel::start()
 Start the RTOS Kernel scheduler. In case of success, this function will never returns. In case of failure, throws a std::system_error exception.
 
 #### uint32_t sys::core::clock_frequency();
 Get system core clock frequency in Hz. Returns the frequency of the current system core clock. In case of failure, throws a std::system_error exception.
-
-### Semaphore
-Defined in header "Semaphore.h"
-
-[Semaphores](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__SemaphoreMgmt.html) are used to manage and protect access to shared resources.
-
-Class sys::semaphore.
 
 ### Event Flags
 Defined in header "EventFlag.h"
@@ -106,7 +109,7 @@ Be carreful with memory pools and smart pointers. Don't delete a memory pool wit
 
 int main()
 {
-	cmsis::kernel::initialize();
+	cmsis::kernel::initialize(); // Or call osKernelInitialize() at the end of SystemInit() function
 
 	std::thread main_thread([]
 	{

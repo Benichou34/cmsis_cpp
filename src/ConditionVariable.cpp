@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2020, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ namespace cmsis
 		std::lock_guard<cmsis::mutex> lg(m_mutex);
 		if (!m_wait.empty())
 		{
-			m_wait.front()->post();
+			m_wait.front()->release();
 			m_wait.pop_front();
 		}
 	}
@@ -46,7 +46,7 @@ namespace cmsis
 	{
 		std::lock_guard<cmsis::mutex> lg(m_mutex);
 		for(auto psema : m_wait)
-			psema->post();
+			psema->release();
 
 		m_wait.clear();
 	}
@@ -68,18 +68,18 @@ namespace cmsis
 		if (timeout > std::numeric_limits<uint32_t>::max())
 			timeout = osWaitForever;
 		
-		cmsis::semaphore sema(0, 1);
-		std::list<cmsis::semaphore*>::iterator it;
+		cmsis::binary_semaphore sema(0);
+		std::list<cmsis::binary_semaphore*>::iterator it;
 		{
 			std::lock_guard<std::mutex> lg(m_mutex);
 			it = m_wait.insert(m_wait.end(), &sema);
 		}
 
 		lock.unlock();
-		cmsis::semaphore::status st = sema.wait_for(usec);
+		bool st = sema.try_acquire_for(usec);
 		lock.lock();
 
-		if (st == cmsis::semaphore::status::timeout)
+		if (!st)
 		{
 			std::lock_guard<std::mutex> lg(m_mutex);
 			m_wait.erase(it);

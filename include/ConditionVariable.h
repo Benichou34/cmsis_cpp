@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2020, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,13 +31,12 @@
 #include <list>
 #include <condition_variable>
 #include "Mutex.h"
+#include "Semaphore.h"
 
 namespace cmsis
 {
 	// cv_status
 	enum class cv_status { no_timeout, timeout };
-
-	class semaphore;
 
 	// STL like implementation
 	class condition_variable
@@ -106,7 +105,7 @@ namespace cmsis
 
 	private:
 		cmsis::mutex m_mutex;
-		std::list<cmsis::semaphore*> m_wait;
+		std::list<cmsis::binary_semaphore*> m_wait;
 	};
 }
 
