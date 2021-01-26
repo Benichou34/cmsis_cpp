@@ -38,7 +38,11 @@ namespace cmsis
 		{
 			m_id = osMemoryPoolNew(static_cast<uint32_t>(count), static_cast<uint32_t>(n), NULL);
 			if (!m_id)
+#ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "osMemoryPoolNew");
+#else
+				std::terminate();
+#endif
 		}
 
 		base_memory_pool::base_memory_pool(base_memory_pool&& other) :
@@ -53,7 +57,11 @@ namespace cmsis
 			{
 				osStatus_t sta = osMemoryPoolDelete(m_id);
 				if (sta != osOK)
+#ifdef __cpp_exceptions
 					throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
+#else
+					std::terminate();
+#endif
 			}
 		}
 
@@ -65,7 +73,11 @@ namespace cmsis
 				{
 					osStatus_t sta = osMemoryPoolDelete(m_id);
 					if (sta != osOK)
+#ifdef __cpp_exceptions
 						throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolDelete", m_id));
+#else
+						std::terminate();
+#endif
 					m_id = 0;
 				}
 
@@ -78,11 +90,17 @@ namespace cmsis
 		void* base_memory_pool::allocate(size_t n)
 		{
 			if (n != 1)
+#ifdef __cpp_exceptions
 				throw std::bad_alloc();
+#else
+				return nullptr;
+#endif
 
 			void* p = osMemoryPoolAlloc(m_id, osWaitForever);
+#ifdef __cpp_exceptions
 			if (!p)
 				throw std::bad_alloc();
+#endif
 
 			return p;
 		}
@@ -91,7 +109,11 @@ namespace cmsis
 		{
 			osStatus_t sta = osMemoryPoolFree(m_id, p);
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osMemoryPoolFree", m_id));
+#else
+				std::terminate();
+#endif
 		}
 
 		size_t base_memory_pool::max_size() const noexcept

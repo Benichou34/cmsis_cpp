@@ -29,6 +29,7 @@
 #define CMSIS_THREAD_H_
 
 #include <memory>
+#include <functional>
 #include <thread>
 
 namespace cmsis

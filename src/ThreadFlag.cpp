@@ -39,7 +39,11 @@ namespace cmsis
 	{
 		int32_t flags = osThreadFlagsSet(t.native_handle(), mask);
 		if (flags < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(flags, os_category(), internal::str_error("osThreadFlagsSet", t.native_handle()));
+#else
+			std::terminate();
+#endif
 
 		return flags;
 	}
@@ -50,11 +54,19 @@ namespace cmsis
 		{
 			osThreadId_t tid = osThreadGetId();
 			if (tid == NULL)
+#ifdef __cpp_exceptions
 				throw std::system_error(osErrorResource, os_category(), "osThreadGetId");
+#else
+				std::terminate();
+#endif
 
 			int32_t flags = osThreadFlagsSet(tid, mask);
 			if (flags < 0)
+#ifdef __cpp_exceptions
 				throw std::system_error(flags, os_category(), cmsis::internal::str_error("osThreadFlagsSet", tid));
+#else
+				std::terminate();
+#endif
 
 			return flags;
 		}
@@ -63,7 +75,11 @@ namespace cmsis
 		{
 			int32_t flags = osThreadFlagsGet();
 			if (flags < 0)
+#ifdef __cpp_exceptions
 				throw std::system_error(flags, flags_category(), "osThreadFlagsGet");
+#else
+				std::terminate();
+#endif
 
 			return flags;
 		}
@@ -78,7 +94,11 @@ namespace cmsis
 		{
 			int32_t flags = osThreadFlagsClear(mask);
 			if (flags < 0)
+#ifdef __cpp_exceptions
 				throw std::system_error(flags, flags_category(), "osThreadFlagsClear");
+#else
+				std::terminate();
+#endif
 
 			return flags;
 		}
@@ -97,7 +117,11 @@ namespace cmsis
 
 			int32_t flags = osThreadFlagsWait(mask, option, osWaitForever);
 			if (flags < 0)
+#ifdef __cpp_exceptions
 				throw std::system_error(flags, flags_category(), "osThreadFlagsWait");
+#else
+				std::terminate();
+#endif
 
 			return flags;
 		}
@@ -111,7 +135,11 @@ namespace cmsis
 		flags::status flags::wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue)
 		{
 			if (usec < std::chrono::microseconds::zero())
+#ifdef __cpp_exceptions
 				throw std::system_error(osErrorParameter, os_category(), "thread_flag: negative timer");
+#else
+				std::terminate();
+#endif
 
 			uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
 			if (timeout > std::numeric_limits<uint32_t>::max())
@@ -123,7 +151,11 @@ namespace cmsis
 
 			flagValue = osThreadFlagsWait(mask, option, timeout);
 			if (flagValue < 0 && flagValue != osErrorTimeout)
+#ifdef __cpp_exceptions
 				throw std::system_error(flagValue, flags_category(), "osThreadFlagsWait");
+#else
+				std::terminate();
+#endif
 
 			return (flagValue == osErrorTimeout ? status::timeout : status::no_timeout);
 		}

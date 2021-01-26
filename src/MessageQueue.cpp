@@ -36,7 +36,11 @@ namespace cmsis { namespace internal
 	{
 		m_id = osMessageQueueNew(max_len, ele_len, NULL);
 		if (m_id == 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(osError, os_category(), "osMessageQueueNew");
+#else
+			std::terminate();
+#endif
 	}
 
 	message_queue_impl::message_queue_impl(message_queue_impl&& t)
@@ -49,7 +53,11 @@ namespace cmsis { namespace internal
 	{
 		osStatus_t sta = osMessageQueueDelete(m_id);
 		if (sta != osOK)
+#ifdef __cpp_exceptions
 			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueDelete", m_id));
+#else
+			std::terminate();
+#endif
 	}
 
 	void message_queue_impl::swap(message_queue_impl& t)
@@ -69,13 +77,21 @@ namespace cmsis { namespace internal
 	{
 		osStatus_t sta = osMessageQueuePut(m_id, data, 0, osWaitForever);
 		if (sta != osOK)
+#ifdef __cpp_exceptions
 			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueuePut", m_id));
+#else
+			std::terminate();
+#endif
 	}
 
 	bool message_queue_impl::send(const void* data, std::chrono::microseconds usec)
 	{
 		if (usec < std::chrono::microseconds::zero())
+#ifdef __cpp_exceptions
 			throw std::system_error(osErrorParameter, os_category(), "Data queue: negative timer");
+#else
+			std::terminate();
+#endif
 
 		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
 		if (timeout > std::numeric_limits<uint32_t>::max())
@@ -83,7 +99,11 @@ namespace cmsis { namespace internal
 
 		osStatus_t sta = osMessageQueuePut(m_id, data, 0, timeout);
 		if (sta != osOK && sta != osErrorTimeout)
+#ifdef __cpp_exceptions
 			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueuePut", m_id));
+#else
+			std::terminate();
+#endif
 
 		return (sta != osErrorTimeout);
 	}
@@ -93,7 +113,11 @@ namespace cmsis { namespace internal
 		void* data = nullptr;
 		osStatus_t sta = osMessageQueueGet(m_id, &data, 0, osWaitForever);     // wait for message
 		if (sta != osOK)
+#ifdef __cpp_exceptions
 			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueGet", m_id));
+#else
+			std::terminate();
+#endif
 
 		return data;
 	}
@@ -101,7 +125,11 @@ namespace cmsis { namespace internal
 	bool message_queue_impl::receive(void*& data, std::chrono::microseconds usec)
 	{
 		if (usec < std::chrono::microseconds::zero())
+#ifdef __cpp_exceptions
 			throw std::system_error(osErrorParameter, os_category(), "Data queue: negative timer");
+#else
+			std::terminate();
+#endif
 
 		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
 		if (timeout > std::numeric_limits<uint32_t>::max())
@@ -109,7 +137,11 @@ namespace cmsis { namespace internal
 
 		osStatus_t sta = osMessageQueueGet(m_id, &data, 0, timeout);     // wait for message
 		if (sta != osOK && sta != osErrorTimeout)
+#ifdef __cpp_exceptions
 			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueGet", m_id));
+#else
+			std::terminate();
+#endif
 
 		return (sta != osErrorTimeout);
 	}

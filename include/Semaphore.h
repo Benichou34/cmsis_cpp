@@ -45,14 +45,22 @@ namespace cmsis
 		{
 			m_id = osSemaphoreNew(max(), desired, NULL);	
 			if (m_id == 0)
+#ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "osSemaphoreNew");
+#else
+				std::terminate();
+#endif
 		}
 
 		~counting_semaphore() noexcept(false)
 		{
 			osStatus_t sta = osSemaphoreDelete(m_id);
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreDelete", m_id));
+#else
+				std::terminate();
+#endif
 		}
 
 		void release(std::ptrdiff_t update = 1)
@@ -61,7 +69,11 @@ namespace cmsis
 			{
 				osStatus_t sta = osSemaphoreRelease(m_id);
 				if (sta != osOK)
+#ifdef __cpp_exceptions
 					throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreRelease", m_id));
+#else
+					std::terminate();
+#endif
 			}
 		}
 
@@ -69,7 +81,11 @@ namespace cmsis
 		{
 			osStatus_t sta = osSemaphoreAcquire(m_id, osWaitForever);
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
+#else
+				std::terminate();
+#endif
 		}
 
 		bool try_acquire() noexcept
@@ -100,7 +116,11 @@ namespace cmsis
 		bool try_acquire_for_usec(std::chrono::microseconds usec)
 		{
 			if (usec < std::chrono::microseconds::zero())
+#ifdef __cpp_exceptions
 				throw std::system_error(osErrorParameter, os_category(), "semaphore: negative timer");
+#else
+				std::terminate();
+#endif
 
 			uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
 			if (timeout > std::numeric_limits<uint32_t>::max())
@@ -108,7 +128,11 @@ namespace cmsis
 			
 			osStatus_t sta = osSemaphoreAcquire(m_id, timeout);
 			if (sta != osOK && sta != osErrorTimeout)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
+#else
+				std::terminate();
+#endif
 
 			return (sta == osOK);
 		}

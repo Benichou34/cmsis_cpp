@@ -40,7 +40,11 @@ namespace cmsis
 	{
 		m_id = osEventFlagsNew(NULL);	
 		if (m_id == 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(osError, os_category(), "osEventFlagsNew");
+#else
+			std::terminate();
+#endif
 
 		if (mask != 0)
 			set(mask);
@@ -61,7 +65,11 @@ namespace cmsis
 		{
 			osStatus_t sta = osEventFlagsDelete(m_id);
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osEventFlagsDelete", m_id));
+#else
+				std::terminate();
+#endif
 		}
 	}
 
@@ -84,7 +92,11 @@ namespace cmsis
 	{
 		int32_t flags = osEventFlagsGet(m_id);
 		if (flags < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(flags, os_category(), internal::str_error("osEventFlagsGet", m_id));
+#else
+			std::terminate();
+#endif
 
 		return flags;	
 	}
@@ -97,7 +109,11 @@ namespace cmsis
 	{
 		int32_t flags = osEventFlagsSet(m_id, mask);
 		if (flags < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsSet", m_id));
+#else
+			std::terminate();
+#endif
 
 		return flags;
 	}
@@ -110,7 +126,11 @@ namespace cmsis
 	{
 		int32_t flags = osEventFlagsClear(m_id, mask);
 		if (flags < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsClear", m_id));
+#else
+			std::terminate();
+#endif
 
 		return flags;
 	}
@@ -129,7 +149,11 @@ namespace cmsis
 
 		int32_t flags = osEventFlagsWait(m_id, mask, option, osWaitForever);
 		if (flags < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(flags, flags_category(), internal::str_error("osEventFlagsWait", m_id));
+#else
+			std::terminate();
+#endif
 
 		return flags;
 	}
@@ -143,7 +167,11 @@ namespace cmsis
 	event::status event::wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue)
 	{
 		if (usec < std::chrono::microseconds::zero())
+#ifdef __cpp_exceptions
 			throw std::system_error(osErrorParameter, os_category(), "event: negative timer");
+#else
+			std::terminate();
+#endif
 
 		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
 		if (timeout > std::numeric_limits<uint32_t>::max())
@@ -155,7 +183,11 @@ namespace cmsis
 
 		flagValue = osEventFlagsWait(m_id, mask, option, timeout);
 		if (flagValue < 0 && flagValue != osErrorTimeout)
+#ifdef __cpp_exceptions
 			throw std::system_error(flagValue, flags_category(), internal::str_error("osEventFlagsWait", m_id));
+#else
+			std::terminate();
+#endif
 
 		return (flagValue == osErrorTimeout ? status::timeout : status::no_timeout);
 	}

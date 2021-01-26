@@ -35,8 +35,10 @@ extern "C" uint32_t osRtxMemoryFree (void* mem, void* block);
 void* operator new(std::size_t count)
 {
 	void* ptr = osRtxMemoryAlloc(osRtxInfo.mem.common, count, 0U);
+#ifdef __cpp_exceptions
 	if (!ptr)
 		throw std::bad_alloc();
+#endif
 
 	return ptr;
 }
@@ -44,8 +46,10 @@ void* operator new(std::size_t count)
 void* operator new[](std::size_t count)
 {
 	void* ptr = osRtxMemoryAlloc(osRtxInfo.mem.common, count, 0U);
+#ifdef __cpp_exceptions
 	if (!ptr)
 		throw std::bad_alloc();
+#endif
 
 	return ptr;
 }

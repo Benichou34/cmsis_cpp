@@ -48,7 +48,11 @@ namespace cmsis
 
 			m_id = osThreadNew(runnableMethodStatic, this, &m_attr);
 			if (m_id == 0)
+#ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "osThreadNew");
+#else
+				std::terminate();
+#endif
 		}
 
 		thread_impl(const thread_impl&) = delete;
@@ -63,7 +67,11 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadJoin(m_id);
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osThreadJoin", m_id));
+#else
+				std::terminate();
+#endif
 
 			m_detached.store(true);
 		}
@@ -72,7 +80,11 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadDetach(m_id);
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osThreadDetach", m_id));
+#else
+				std::terminate();
+#endif
 
 			m_detached.store(true);
 		}
@@ -87,10 +99,13 @@ namespace cmsis
 	private:
 		static void runnableMethodStatic(void* pVThread)
 		{
+#ifdef __cpp_exceptions
 			try
 			{
+#endif // __cpp_exceptions
 				thread_impl* pThreadImpl = reinterpret_cast<thread_impl*>(pVThread);
 				pThreadImpl->m_function->run();
+#ifdef __cpp_exceptions
 			}
 #ifdef __GNUC__
 			catch(const abi::__forced_unwind&)
@@ -102,6 +117,7 @@ namespace cmsis
 			{
 				std::terminate();
 			}
+#endif // __cpp_exceptions
 
 			osThreadExit();
 		}
@@ -140,10 +156,18 @@ namespace cmsis
 	void thread::join()
 	{
 		if (!joinable())
+#ifdef __cpp_exceptions
 			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::join"); // task is detached (aka auto-delete)
+#else
+			std::terminate();
+#endif
 
 		if (thread::id(m_pThread->get_id()) == cmsis::this_thread::get_id())
+#ifdef __cpp_exceptions
 			throw std::system_error(std::make_error_code(std::errc::resource_deadlock_would_occur), "thread::join");
+#else
+			std::terminate();
+#endif
 
 		m_pThread->join();
 	}
@@ -156,7 +180,11 @@ namespace cmsis
 	void thread::detach()
 	{
 		if (!joinable())
+#ifdef __cpp_exceptions
 			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::detach"); // task is detached (aka auto-delete)
+#else
+			std::terminate();
+#endif
 
 		m_pThread->detach();
 	}
@@ -187,15 +215,20 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadYield();
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), "osThreadYield");
+#else
+				std::terminate();
+#endif
 		}
 
 		thread::id get_id()
 		{
 			osThreadId_t tid = osThreadGetId();
+#ifdef __cpp_exceptions
 			if (tid == NULL)
 				throw std::system_error(osErrorResource, os_category(), "osThreadGetId");
-
+#endif
 			return thread::id(tid);
 		}
 
@@ -211,7 +244,11 @@ namespace cmsis
 
 					osStatus_t sta = osDelay(ticks);
 					if (sta != osOK)
+#ifdef __cpp_exceptions
 						throw std::system_error(sta, os_category(), "osDelay");
+#else
+						std::terminate();
+#endif
 				}
 			}
 		}

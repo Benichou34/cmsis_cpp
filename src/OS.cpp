@@ -51,8 +51,11 @@ namespace cmsis
 
 			osStatus_t sta = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
 			if(sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), "osKernelGetInfo");
-
+#else
+				std::terminate();
+#endif
 			return std::string(infobuf);
 		}
 
@@ -60,7 +63,11 @@ namespace cmsis
 		{
 			uint32_t tick = osKernelGetTickFreq();
 			if (!tick)
+#ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "osKernelGetTickFreq");
+#else
+				std::terminate();
+#endif
 
 			return tick;
 		}
@@ -75,7 +82,11 @@ namespace cmsis
 			{
 				osStatus_t sta = osKernelInitialize();
 				if (sta != osOK)
+#ifdef __cpp_exceptions
 					throw std::system_error(sta, os_category(), "osKernelInitialize");
+#else
+					std::terminate();
+#endif
 			}
 		}
 
@@ -87,7 +98,11 @@ namespace cmsis
 		{
 			osStatus_t sta = osKernelStart();
 			if (sta != osOK)
+#ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), "osKernelStart");
+#else
+				std::terminate();
+#endif
 		}
 
 		/**
@@ -106,7 +121,11 @@ namespace cmsis
 		{
 			SystemCoreClockUpdate();
 			if (!SystemCoreClock)
+#ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "SystemCoreClock");
+#else
+				std::terminate();
+#endif
 
 			return SystemCoreClock;
 		}
@@ -124,17 +143,29 @@ namespace cmsis
 	{
 		m_previous_lock_state = osKernelLock();
 		if (m_previous_lock_state < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(m_previous_lock_state, os_category(), "osKernelLock");
+#else
+			std::terminate();
+#endif
 	}
 
 	void dispatch::unlock()
 	{
 		if (m_previous_lock_state < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(m_previous_lock_state, os_category(), "Bad kernel previous state");
+#else
+			std::terminate();
+#endif
 
 		m_previous_lock_state = osKernelRestoreLock(m_previous_lock_state);
 		if (m_previous_lock_state < 0)
+#ifdef __cpp_exceptions
 			throw std::system_error(m_previous_lock_state, os_category(), "osKernelRestoreLock");
+#else
+			std::terminate();
+#endif
 	}
 
 	bool dispatch::locked()
@@ -157,6 +188,7 @@ void osRtxIdleThread(void *argument)
 // OS Error Callback function
 uint32_t osRtxErrorNotify (uint32_t code, void *object_id)
 {
+#ifdef __cpp_exceptions
 	try
 	{
 		throw std::system_error(code, cmsis::os_category(), cmsis::internal::str_error("osRtxErrorNotify", object_id));
@@ -166,6 +198,9 @@ uint32_t osRtxErrorNotify (uint32_t code, void *object_id)
 		std::cerr << e.what() << std::endl;
 		for (;;) {}
 	}
-
+#else
+	std::cerr << "osRtxErrorNotify=" << code << '(' << object_id << ')' << std::endl;
+	for (;;) {}
+#endif
 	return code;
 }
