@@ -38,13 +38,16 @@ namespace cmsis
 	class thread_impl
 	{
 	public:
-		thread_impl(std::unique_ptr<thread::CallableBase> targetfunc) :
+		thread_impl(const thread::attributes& attr, std::unique_ptr<thread::CallableBase> targetfunc) :
 			m_id(0),
 			m_attr(),
 			m_function(std::move(targetfunc)),
 			m_detached(false)
 		{
 			m_attr.attr_bits = osThreadJoinable;
+			m_attr.stack_mem = attr.stack_mem;
+			m_attr.stack_size = attr.stack_size;
+			m_attr.priority = static_cast<osPriority_t>(attr.priority);
 
 			m_id = osThreadNew(runnableMethodStatic, this, &m_attr);
 			if (m_id == 0)
@@ -129,8 +132,8 @@ namespace cmsis
 		std::atomic_bool m_detached;
 	};
 
-	thread::thread(std::unique_ptr<thread::CallableBase> base) :
-		m_pThread(std::make_unique<thread_impl>(std::move(base)))
+	thread::thread(const attributes& attr, std::unique_ptr<thread::CallableBase> base) :
+		m_pThread(std::make_unique<thread_impl>(attr, std::move(base)))
 	{
 	}
 

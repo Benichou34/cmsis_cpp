@@ -29,6 +29,7 @@
 #define CMSIS_THREAD_H_
 
 #include <memory>
+#include <chrono>
 #include <functional>
 #include <thread>
 
@@ -62,11 +63,22 @@ namespace cmsis
 			native_handle_type m_tid;
 		};
 
+		// Specific structure for embedded system
+		struct attributes
+		{
+			void*  stack_mem;  // memory for stack (NULL to allocate stack from a fixed-size memory)
+			size_t stack_size; // size of stack (0 as the default is no memory provided)
+			size_t priority;   // initial thread priority (default: osPriorityNormal)
+		};
+
 		thread() noexcept = default;
 		thread(thread&& __t) noexcept;
 
 		template<typename _Callable, typename... _Args>
-		explicit thread(_Callable&& __f, _Args&&... __args) : thread(make_routine(std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...))) { }
+		explicit thread(_Callable&& __f, _Args&&... __args) : thread({}, make_routine(std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...))) { }
+
+		template<typename _Callable, typename... _Args>
+		thread(const attributes& attr, _Callable&& __f, _Args&&... __args) : thread(attr, make_routine(std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...))) { }
 
 		~thread();
 
@@ -99,7 +111,7 @@ namespace cmsis
 		template<typename _Callable>
 		struct CallableImpl : public CallableBase
 		{
-			CallableImpl(_Callable&& __f) : m_func(std::forward<_Callable>(__f)) { }
+			explicit CallableImpl(_Callable&& __f) : m_func(std::forward<_Callable>(__f)) { }
 			virtual void run() override { m_func(); }
 			_Callable m_func;
 		};
@@ -111,7 +123,7 @@ namespace cmsis
 	    	return std::unique_ptr<CallableBase>(new CallableImpl<_Callable>(std::forward<_Callable>(__f)));
 		}
 
-	    thread(std::unique_ptr<CallableBase> base);
+	    thread(const attributes& attr, std::unique_ptr<CallableBase> base);
 
 	private:
 		std::unique_ptr<thread_impl> m_pThread;
