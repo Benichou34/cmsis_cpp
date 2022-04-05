@@ -9,7 +9,7 @@ You must use a C++ compiler that supports the C++11/C++14 standard, like [GNU AR
 Defined in header "Thread.h"
 
 This header is part of the [thread support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<thread>](http://en.cppreference.com/w/cpp/header/thread) interfaces.
-You can directly use [std::thread](http://en.cppreference.com/w/cpp/thread/thread) and [std::thread::id](http://en.cppreference.com/w/cpp/thread/thread/id) classes, and std::this_thread namespace.
+You can directly use [std::thread](http://en.cppreference.com/w/cpp/thread/thread) and [std:&#58;thread::id](http://en.cppreference.com/w/cpp/thread/thread/id) classes, and std::this_thread namespace.
 
 Threads are created in a join-able state, with default thread priority (osPriorityNormal) and default stack size from the [Global Memory Pool](https://arm-software.github.io/CMSIS_5/RTOS2/html/theory_of_operation.html#GlobalMemoryPool). See [Thread Management](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__ThreadMgmt.html) for more details.
 
@@ -36,10 +36,10 @@ You can directly use [std::counting_semaphore](https://en.cppreference.com/w/cpp
 Defined in header "Chrono.h"
 
 This header is part of the [date and time](http://en.cppreference.com/w/cpp/chrono) library. It provides a full implementation of STL [<chrono>](http://en.cppreference.com/w/cpp/header/chrono) interfaces. [std::chrono::system_clock](http://en.cppreference.com/w/cpp/chrono/system_clock) and [std::chrono::high_resolution_clock](http://en.cppreference.com/w/cpp/chrono/high_resolution_clock) are implemented using the osKernelGetTickCount() function.
-If you need more precision, you can use sys::chrono::high\_resolution\_clock that is implemented with  osKernelGetSysTimerCount() function.
+If you need more precision, you can use sys::chrono::high\_resolution\_clock that is implemented with osKernelGetSysTimerCount() function.
 
 ### Dynamic memory managment (new, delete)
-Globals operators [new](http://en.cppreference.com/w/cpp/memory/new/operator_new) and [delete](http://en.cppreference.com/w/cpp/memory/new/operator_delete) are overridden for using the [Global Memory Pool](https://arm-software.github.io/CMSIS_5/RTOS2/html/theory_of_operation.html#GlobalMemoryPool). For now, this part is specific to RTX5 implementation, and need to be ported for other RTOS (like [FreeRTOS](http://www.freertos.org)).
+Globals operators [new](http://en.cppreference.com/w/cpp/memory/new/operator_new) and [delete](http://en.cppreference.com/w/cpp/memory/new/operator_delete) are overridden for using the [Global Memory Pool](https://arm-software.github.io/CMSIS_5/RTOS2/html/theory_of_operation.html#GlobalMemoryPool). For now, this part is specific to [RTX5](https://github.com/ARM-software/CMSIS_5) implementation, and need to be ported for other RTOS (like [FreeRTOS](http://www.freertos.org)).
 
 ### Exceptions
 Defined in header "OSException.h"
@@ -61,10 +61,16 @@ Get RTOS Kernel tick frequency in Hz. Returns the frequency of the current RTOS 
 #### void sys::kernel::initialize()
 Initialize the RTOS Kernel. In case of failure, throws a std::system_error exception.
 
-If you want to use static C++ objects, the RTOS must be initialized before main(). In that case, call osKernelInitialize() at the end of SystemInit() function.
+If you want to use static C++ objects, the RTOS must be initialized before main(). In that case, call osKernelInitialize() at the end of [SystemInit()](https://arm-software.github.io/CMSIS_5/Core/html/group__system__init__gr.html) function.
 
 #### void sys::kernel::start()
 Start the RTOS Kernel scheduler. In case of success, this function will never returns. In case of failure, throws a std::system_error exception.
+
+#### uint32_t sys::kernel::suspend() noexcept
+Suspends the RTOS kernel scheduler and thus enables sleep modes.
+
+#### void sys::kernel::resume(uint32_t sleep_ticks)  noexcept
+Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
 
 #### uint32_t sys::core::clock_frequency();
 Get system core clock frequency in Hz. Returns the frequency of the current system core clock. In case of failure, throws a std::system_error exception.
