@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,120 +25,83 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_SEMAPHORE_H_
-#define CMSIS_SEMAPHORE_H_
+#ifndef CPP_CMSIS_SEMAPHORE_H_
+#define CPP_CMSIS_SEMAPHORE_H_
 
 #include <chrono>
-#include "OSException.h"
-#include "cmsis_os2.h"
 
 namespace cmsis
 {
+	namespace internal
+	{
+		class base_semaphore
+		{
+		public:
+			typedef void* native_handle_type;
+
+			base_semaphore(std::ptrdiff_t max, std::ptrdiff_t desired);
+			~base_semaphore() noexcept(false);
+
+			void release(std::ptrdiff_t update = 1);
+			void acquire();
+			bool try_acquire() noexcept;
+
+			template<class Rep, class Period>
+			bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time)
+			{
+				return try_acquire_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(rel_time));
+			}
+
+			template<class Clock, class Duration>
+			bool try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time)
+			{
+				return try_acquire_for(abs_time - Clock::now());
+			}
+
+			native_handle_type native_handle() noexcept { return m_id; }
+
+			base_semaphore(const base_semaphore&) = delete;
+			base_semaphore& operator=(const base_semaphore&) = delete;
+
+		private:
+			bool try_acquire_for_usec(std::chrono::microseconds usec);
+
+		private:
+			native_handle_type m_id;                    ///< sempahore identifier
+		};
+	}
+
 	template<std::ptrdiff_t LeastMaxValue = 0xFFFFFFFF>
-	class counting_semaphore
+	class counting_semaphore : private internal::base_semaphore
 	{
 	public:
-		typedef void* native_handle_type;
+		typedef internal::base_semaphore::native_handle_type native_handle_type;
 
-		constexpr explicit counting_semaphore(std::ptrdiff_t desired) :
-			m_id(0)
-		{
-			m_id = osSemaphoreNew(max(), desired, NULL);	
-			if (m_id == 0)
-#ifdef __cpp_exceptions
-				throw std::system_error(osError, os_category(), "osSemaphoreNew");
-#else
-				std::terminate();
-#endif
-		}
+		constexpr explicit counting_semaphore(std::ptrdiff_t desired) : internal::base_semaphore(max(), desired) {}
+		~counting_semaphore() = default;
 
-		~counting_semaphore() noexcept(false)
-		{
-			osStatus_t sta = osSemaphoreDelete(m_id);
-			if (sta != osOK)
-#ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreDelete", m_id));
-#else
-				std::terminate();
-#endif
-		}
-
-		void release(std::ptrdiff_t update = 1)
-		{
-			while (update--)
-			{
-				osStatus_t sta = osSemaphoreRelease(m_id);
-				if (sta != osOK)
-#ifdef __cpp_exceptions
-					throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreRelease", m_id));
-#else
-					std::terminate();
-#endif
-			}
-		}
-
-		void acquire()
-		{
-			osStatus_t sta = osSemaphoreAcquire(m_id, osWaitForever);
-			if (sta != osOK)
-#ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
-#else
-				std::terminate();
-#endif
-		}
-
-		bool try_acquire() noexcept
-		{
-			return (osSemaphoreAcquire(m_id, 0) == osOK);
-		}
+		void release(std::ptrdiff_t update = 1) { internal::base_semaphore::release(update); }
+		void acquire() { internal::base_semaphore::acquire(); }
+		bool try_acquire() noexcept { return internal::base_semaphore::try_acquire(); }
 
 		template<class Rep, class Period>
 		bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time)
 		{
-			return try_acquire_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(rel_time));
+			return internal::base_semaphore::try_acquire_for(rel_time);
 		}
 
 		template<class Clock, class Duration>
 		bool try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time)
 		{
-			return try_acquire_for(abs_time - Clock::now());
+			return internal::base_semaphore::try_acquire_until(abs_time);
 		}
 
-		constexpr std::ptrdiff_t max() noexcept { return LeastMaxValue; }
+		static constexpr std::ptrdiff_t max() noexcept { return LeastMaxValue; }
 
-		native_handle_type native_handle() noexcept { return m_id; }
+		native_handle_type native_handle() noexcept { return internal::base_semaphore::native_handle(); }
 
 		counting_semaphore(const counting_semaphore&) = delete;
 		counting_semaphore& operator=(const counting_semaphore&) = delete;
-
-	private:
-		bool try_acquire_for_usec(std::chrono::microseconds usec)
-		{
-			if (usec < std::chrono::microseconds::zero())
-#ifdef __cpp_exceptions
-				throw std::system_error(osErrorParameter, os_category(), "semaphore: negative timer");
-#else
-				std::terminate();
-#endif
-
-			uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-			if (timeout > std::numeric_limits<uint32_t>::max())
-				timeout = osWaitForever;
-			
-			osStatus_t sta = osSemaphoreAcquire(m_id, timeout);
-			if (sta != osOK && sta != osErrorTimeout)
-#ifdef __cpp_exceptions
-				throw std::system_error(sta, os_category(), internal::str_error("osSemaphoreAcquire", m_id));
-#else
-				std::terminate();
-#endif
-
-			return (sta == osOK);
-		}
-
-	private:
-		native_handle_type m_id;
 	};
 
 	using binary_semaphore = counting_semaphore<1>;
@@ -153,4 +116,4 @@ namespace std
 }
 #endif
 
-#endif // CMSIS_SEMAPHORE_H_
+#endif // CPP_CMSIS_SEMAPHORE_H_
