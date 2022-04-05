@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,22 +40,28 @@ namespace cmsis
 	public:
 		thread_impl(const thread::attributes& attr, std::unique_ptr<thread::CallableBase> targetfunc) :
 			m_id(0),
-			m_attr(),
 			m_function(std::move(targetfunc)),
 			m_detached(false)
 		{
-			m_attr.attr_bits = osThreadJoinable;
-			m_attr.stack_mem = attr.stack_mem;
-			m_attr.stack_size = attr.stack_size;
-			m_attr.priority = static_cast<osPriority_t>(attr.priority);
+			osThreadAttr_t osAttr = {};
+			osAttr.attr_bits = osThreadJoinable;
+			osAttr.name = attr.name;
+			osAttr.stack_mem = attr.stack_mem;
+			osAttr.stack_size = attr.stack_size;
+			osAttr.priority = static_cast<osPriority_t>(attr.priority);
 
-			m_id = osThreadNew(runnableMethodStatic, this, &m_attr);
+			if (osAttr.priority == osPriorityNone)
+				osAttr.priority = osPriorityNormal;
+
+			m_id = osThreadNew(runnableMethodStatic, this, &osAttr);
 			if (m_id == 0)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "osThreadNew");
 #else
 				std::terminate();
 #endif
+			}
 		}
 
 		thread_impl(const thread_impl&) = delete;
@@ -70,11 +76,13 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadJoin(m_id);
 			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osThreadJoin", m_id));
 #else
 				std::terminate();
 #endif
+			}
 
 			m_detached.store(true);
 		}
@@ -83,11 +91,13 @@ namespace cmsis
 		{
 			osStatus_t sta = osThreadDetach(m_id);
 			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osThreadDetach", m_id));
 #else
 				std::terminate();
 #endif
+			}
 
 			m_detached.store(true);
 		}
@@ -127,7 +137,6 @@ namespace cmsis
 
 	private:
 		osThreadId_t m_id; // task identifier
-		osThreadAttr_t m_attr;
 		std::unique_ptr<thread::CallableBase> m_function;
 		std::atomic_bool m_detached;
 	};
@@ -159,18 +168,22 @@ namespace cmsis
 	void thread::join()
 	{
 		if (!joinable())
+		{
 #ifdef __cpp_exceptions
 			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::join"); // task is detached (aka auto-delete)
 #else
 			std::terminate();
 #endif
+		}
 
 		if (thread::id(m_pThread->get_id()) == cmsis::this_thread::get_id())
+		{
 #ifdef __cpp_exceptions
 			throw std::system_error(std::make_error_code(std::errc::resource_deadlock_would_occur), "thread::join");
 #else
 			std::terminate();
 #endif
+		}
 
 		m_pThread->join();
 	}
@@ -183,11 +196,13 @@ namespace cmsis
 	void thread::detach()
 	{
 		if (!joinable())
+		{
 #ifdef __cpp_exceptions
 			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::detach"); // task is detached (aka auto-delete)
 #else
 			std::terminate();
 #endif
+		}
 
 		m_pThread->detach();
 	}
@@ -212,17 +227,104 @@ namespace cmsis
 		m_pThread.swap(__t.m_pThread);
 	}
 
+	void thread::suspend()
+	{
+		osStatus_t sta = osThreadSuspend(get_id().m_tid);
+		if (sta != osOK)
+		{
+#ifdef __cpp_exceptions
+			throw std::system_error(sta, os_category(), internal::str_error("osThreadSuspend", get_id().m_tid));
+#else
+			std::terminate();
+#endif
+		}
+	}
+
+	void thread::resume()
+	{
+		osStatus_t sta = osThreadResume(get_id().m_tid);
+		if (sta != osOK)
+		{
+#ifdef __cpp_exceptions
+			throw std::system_error(sta, os_category(), internal::str_error("osThreadResume", get_id().m_tid));
+#else
+			std::terminate();
+#endif
+		}
+	}
+
+	void thread::priority(size_t prio)
+	{
+		osStatus_t sta = osThreadSetPriority(get_id().m_tid, static_cast<osPriority_t>(prio));
+		if (sta != osOK)
+		{
+#ifdef __cpp_exceptions
+			throw std::system_error(sta, os_category(), internal::str_error("osThreadSetPriority", get_id().m_tid));
+#else
+			std::terminate();
+#endif
+		}
+	}
+
+	size_t thread::priority() const
+	{
+		osPriority_t prio = osThreadGetPriority(get_id().m_tid);
+		if (prio == osPriorityError)
+		{
+#ifdef __cpp_exceptions
+			throw std::system_error(osError, os_category(), internal::str_error("osThreadGetPriority", get_id().m_tid));
+#else
+			std::terminate();
+#endif
+		}
+
+		return  static_cast<size_t>(prio);
+	}
+
+	const char* thread::name() const noexcept
+	{
+		return osThreadGetName(get_id().m_tid);
+	}
+
+
+	bool thread::is_blocked() const
+	{
+		osThreadState_t state = osThreadGetState(get_id().m_tid);
+		if (state == osThreadError)
+		{
+#ifdef __cpp_exceptions
+			throw std::system_error(osError, os_category(), internal::str_error("osThreadGetState", get_id().m_tid));
+#else
+			std::terminate();
+#endif
+		}
+
+		return (state == osThreadBlocked);
+	}
+
+	size_t thread::stack_size() const noexcept
+	{
+		return static_cast<size_t>(osThreadGetStackSize(get_id().m_tid));
+	}
+
+	size_t thread::stack_space() const noexcept
+	{
+		return static_cast<size_t>(osThreadGetStackSpace(get_id().m_tid));
+	}
+
 	namespace this_thread
 	{
 		void yield()
 		{
 			osStatus_t sta = osThreadYield();
 			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), "osThreadYield");
 #else
 				std::terminate();
 #endif
+			}
 		}
 
 		thread::id get_id()
@@ -247,13 +349,24 @@ namespace cmsis
 
 					osStatus_t sta = osDelay(ticks);
 					if (sta != osOK)
+					{
 #ifdef __cpp_exceptions
 						throw std::system_error(sta, os_category(), "osDelay");
 #else
 						std::terminate();
 #endif
+					}
 				}
 			}
 		}
 	}
 }
+
+#if !defined(OS_USE_SEMIHOSTING)
+
+extern "C" int _getpid(void)
+{
+	return reinterpret_cast<int>(osThreadGetId());
+}
+
+#endif // !OS_USE_SEMIHOSTING

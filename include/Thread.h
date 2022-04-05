@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_THREAD_H_
-#define CMSIS_THREAD_H_
+#ifndef CPP_CMSIS_THREAD_H_
+#define CPP_CMSIS_THREAD_H_
 
 #include <memory>
 #include <chrono>
@@ -69,13 +69,12 @@ namespace cmsis
 			void*  stack_mem;  // memory for stack (NULL to allocate stack from a fixed-size memory)
 			size_t stack_size; // size of stack (0 as the default is no memory provided)
 			size_t priority;   // initial thread priority (default: osPriorityNormal)
+			const char* name;  // name of the thread
 		};
 
 		thread() noexcept = default;
+		thread(const thread&) = delete;
 		thread(thread&& __t) noexcept;
-
-		template<typename _Callable, typename... _Args>
-		explicit thread(_Callable&& __f, _Args&&... __args) : thread({}, make_routine(std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...))) { }
 
 		template<typename _Callable, typename... _Args>
 		thread(const attributes& attr, _Callable&& __f, _Args&&... __args) : thread(attr, make_routine(std::bind(std::forward<_Callable>(__f), std::forward<_Args>(__args)...))) { }
@@ -99,6 +98,19 @@ namespace cmsis
 
 		// Returns a value that hints at the number of hardware thread contexts.
 		static unsigned int	hardware_concurrency() noexcept;
+
+		// CMSIS specific methods
+		void suspend();
+		void resume();
+
+		void priority(size_t prio);
+		size_t priority() const;
+
+		const char* name() const  noexcept;
+		bool is_blocked() const;
+
+		size_t stack_size() const noexcept;
+		size_t stack_space() const noexcept;
 
 		// Simple base type that the templatized, derived class containing an arbitrary functor can be converted to and called.
 		struct CallableBase
@@ -155,24 +167,44 @@ namespace cmsis
 			void sleep_for_usec(std::chrono::microseconds usec);
 		}
 
-		// Provides a hint to the implementation to reschedule the execution of threads, allowing other threads to run.
+		/// Provides a hint to the implementation to reschedule the execution of threads, allowing other threads to run.
 		void yield();
 
-		 // Returns the id of the current thread.
+		 /// Returns the id of the current thread.
 		thread::id get_id();
 
+		/// sleep_for
 		template<class Rep, class Period>
 		void sleep_for(const std::chrono::duration<Rep, Period>& sleep_duration)
 		{
 			internal::sleep_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(sleep_duration));
 		}
 
+		/// sleep_until
 		template<class Clock, class Duration>
 		void sleep_until(const std::chrono::time_point<Clock, Duration>& sleep_time)
 		{
-			sleep_for(sleep_time - Clock::now());
+			auto now = Clock::now();
+			if (Clock::is_steady)
+			{
+				if (now < sleep_time)
+					sleep_for(sleep_time - now);
+				return;
+			}
+
+			while (now < sleep_time)
+			{
+				sleep_for(sleep_time - now);
+				now = Clock::now();
+			}
 		}
 	}
+}
+
+namespace sys
+{
+	using thread = cmsis::thread;
+	namespace this_thread = cmsis::this_thread;
 }
 
 namespace std
@@ -186,9 +218,24 @@ namespace std
 	};
 
 #if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
-	using thread = cmsis::thread;
+	class thread : public cmsis::thread
+	{
+	public:
+		thread() noexcept = default;
+		thread(const thread&) = delete;
+		thread(thread&&) noexcept = default;
+
+		template<typename _Callable, typename... _Args>
+		explicit thread(_Callable&& __f, _Args&&... __args) : cmsis::thread({}, std::forward<_Callable>(__f), std::forward<_Args>(__args)...) { }
+
+		~thread() = default;
+
+		thread& operator=(const thread&) = delete;
+		thread& operator=(thread&&) = default;
+	};
+
 	namespace this_thread = cmsis::this_thread;
 #endif
 }
 
-#endif // CMSIS_THREAD_H_
+#endif // CPP_CMSIS_THREAD_H_
