@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,9 +26,11 @@
  */
 
 #include "OSException.h"
-#include <sstream>
 #include "cmsis_os2.h"
+
+#ifdef RTE_CMSIS_RTOS2_RTX5
 #include "rtx_os.h"
+#endif
 
 namespace
 {
@@ -53,11 +55,13 @@ namespace
 			case osErrorNoMemory : return "System is out of memory: it was impossible to allocate or reserve memory for the operation";
 			case osErrorISR      : return "Not allowed in ISR context: the function cannot be called from interrupt service routines";
 			case osStatusReserved: return "Prevents enum down-size compiler optimization";
+#ifdef RTE_CMSIS_RTOS2_RTX5
 			case osRtxErrorStackUnderflow: return "Stack underflow detected for thread";
 			case osRtxErrorISRQueueOverflow: return "ISR Queue overflow detected when inserting object";
 			case osRtxErrorTimerQueueOverflow: return "User Timer Callback Queue overflow detected for timer";
 			case osRtxErrorClibSpace: return "Standard C/C++ library libspace not available: increase OS_THREAD_LIBSPACE_NUM";
 			case osRtxErrorClibMutex: return "Standard C/C++ library mutex initialization failed";
+#endif
 
 			default : return "Unknown error";
 			}
@@ -77,11 +81,11 @@ namespace
 		{
 			switch (condition)
 			{
-			case osFlagsErrorUnknown  : return "Generic error";
-			case osFlagsErrorTimeout  : return "A timeout was specified and the specified flags were not set, when the timeout occurred";
-			case osFlagsErrorResource : return "Try to get a flag that was not set and timeout 0 was specified, or the specified object identifier is corrupt or invalid";
-			case osFlagsErrorParameter: return "A given parameter is wrong";
-			case osFlagsErrorISR      : return "Not allowed in ISR context: the function cannot be called from interrupt service routines";
+			case static_cast<int>(osFlagsErrorUnknown)  : return "Generic error";
+			case static_cast<int>(osFlagsErrorTimeout)  : return "A timeout was specified and the specified flags were not set, when the timeout occurred";
+			case static_cast<int>(osFlagsErrorResource) : return "Try to get a flag that was not set and timeout 0 was specified, or the specified object identifier is corrupt or invalid";
+			case static_cast<int>(osFlagsErrorParameter): return "A given parameter is wrong";
+			case static_cast<int>(osFlagsErrorISR)      : return "Not allowed in ISR context: the function cannot be called from interrupt service routines";
 
 			default : return "Unknown error";
 			}
@@ -107,9 +111,8 @@ namespace cmsis
 	{
 		std::string str_error(const std::string& func, const void* id)
 		{
-			std::ostringstream oss;
-			oss << func << '(' << id << ')';
-			return oss.str();
+			std::string str = func + '(' + std::to_string(reinterpret_cast<size_t>(id)) + ')';
+			return str;
 		}
 	}
 }
