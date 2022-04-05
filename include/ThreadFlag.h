@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_THREADFLAG_H_
-#define CMSIS_THREADFLAG_H_
+#ifndef CPP_CMSIS_THREADFLAG_H_
+#define CPP_CMSIS_THREADFLAG_H_
 
 #include "Thread.h"
 
@@ -92,11 +92,8 @@ namespace cmsis
 
 namespace sys
 {
-	namespace thread
-	{
-		using flags = cmsis::thread_flags;
-	}
+	using thread_flags = cmsis::thread_flags;
 	namespace this_thread = cmsis::this_thread;
 }
 
-#endif // CMSIS_THREADFLAG_H_
+#endif // CPP_CMSIS_THREADFLAG_H_
