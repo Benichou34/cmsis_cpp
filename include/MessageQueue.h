@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_MESSAGE_QUEUE_H_INCLUDED
-#define CMSIS_MESSAGE_QUEUE_H_INCLUDED
+#ifndef CPP_CMSIS_MESSAGE_QUEUE_H_INCLUDED
+#define CPP_CMSIS_MESSAGE_QUEUE_H_INCLUDED
 
 #include <chrono>
 #include <memory>
@@ -49,14 +49,16 @@ namespace cmsis
 			message_queue_impl& operator=(const message_queue_impl&) = delete;
 			message_queue_impl& operator=(message_queue_impl&& t);
 
-			void send(const void* data);
-			bool send(const void* data, std::chrono::microseconds usec);
+			void put(const void* data);
+			bool put(const void* data, std::chrono::microseconds usec);
 
-			void* receive();
-			bool receive(void*& data, std::chrono::microseconds usec);
+			void get(void* data);
+			bool get(void* data, std::chrono::microseconds usec);
 
 			size_t size() const;
 			size_t capacity() const;
+
+			void reset();
 
 		private:
 			void* m_id;
@@ -65,6 +67,66 @@ namespace cmsis
 
 	template <class T, typename Enable = void> // Default implementation
 	class message_queue : private internal::message_queue_impl
+	{
+		 static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "Only support POD type");
+
+	public:
+		typedef T element_type;
+		enum class status { no_timeout, timeout };
+
+		message_queue(size_t max_len) : internal::message_queue_impl(max_len, sizeof(T)) {}
+		message_queue(const message_queue&) = delete;
+		message_queue(message_queue&& t) : internal::message_queue_impl(std::move(t)) {}
+		~message_queue() = default;
+
+		void swap(message_queue& t) noexcept { internal::message_queue_impl::swap(t); }
+
+		message_queue& operator=(const message_queue&) = delete;
+		message_queue& operator=(message_queue&& t)
+		{
+			internal::message_queue_impl::operator=(std::move(t));
+			return *this;
+		}
+
+		void put(const element_type& data)
+		{
+			internal::message_queue_impl::put(&data);
+		}
+
+		template<class Rep, class Period>
+		status put(const element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
+		{
+			return internal::message_queue_impl::put(&data, wait_time) ? status::no_timeout : status::timeout;
+		}
+
+		element_type get()
+		{
+			element_type data;
+			internal::message_queue_impl::get(&data);
+			return data;
+		}
+
+		void get(element_type& data)
+		{
+			internal::message_queue_impl::get(&data);
+		}
+
+		template<class Rep, class Period>
+		status get(element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
+		{
+			bool ret = internal::message_queue_impl::get(&data, wait_time);
+			return ret ? status::no_timeout : status::timeout;
+		}
+
+		bool empty() const { return size() == 0; }
+		size_t size() const { return internal::message_queue_impl::size(); }
+		size_t capacity() const { return internal::message_queue_impl::capacity(); }
+
+		void reset() { internal::message_queue_impl::reset(); }
+	};
+
+	template <class T> // Specialization for unique_pointer
+	class message_queue<std::unique_ptr<T>, typename std::enable_if<std::is_class<std::unique_ptr<T>>::value>::type> : private internal::message_queue_impl
 	{
 	public:
 		typedef T element_type;
@@ -84,29 +146,38 @@ namespace cmsis
 			return *this;
 		}
 
-		void send(std::unique_ptr<element_type>&& data)
+		void put(std::unique_ptr<element_type>&& data)
 		{
 			element_type* ptr = data.release();
-			internal::message_queue_impl::send(&ptr);
+			internal::message_queue_impl::put(&ptr);
 		}
 
 		template<class Rep, class Period>
-		status send(std::unique_ptr<element_type>&& data, const std::chrono::duration<Rep, Period>& wait_time)
+		status put(std::unique_ptr<element_type>&& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			element_type* ptr = data.release();
-			return internal::message_queue_impl::send(&ptr, wait_time) ? status::no_timeout : status::timeout;
+			return internal::message_queue_impl::put(&ptr, wait_time) ? status::no_timeout : status::timeout;
 		}
 
-		std::unique_ptr<element_type> receive()
-		{
-			return std::unique_ptr<element_type>(static_cast<element_type*>(internal::message_queue_impl::receive()));
-		}
-
-		template<class Rep, class Period>
-		status receive(std::unique_ptr<element_type>& data, const std::chrono::duration<Rep, Period>& wait_time)
+		std::unique_ptr<element_type> get()
 		{
 			void* ptr = nullptr;
-			bool ret = internal::message_queue_impl::receive(ptr, wait_time);
+			internal::message_queue_impl::get(&ptr);
+			return std::unique_ptr<element_type>(static_cast<element_type*>(ptr));
+		}
+
+		void get(std::unique_ptr<element_type>& data)
+		{
+			void* ptr = nullptr;
+			bool ret = internal::message_queue_impl::get(&ptr);
+			data.reset(static_cast<element_type*>(ptr));
+		}
+
+		template<class Rep, class Period>
+		status get(std::unique_ptr<element_type>& data, const std::chrono::duration<Rep, Period>& wait_time)
+		{
+			void* ptr = nullptr;
+			bool ret = internal::message_queue_impl::get(&ptr, wait_time);
 			data.reset(static_cast<element_type*>(ptr));
 			return ret ? status::no_timeout : status::timeout;
 		}
@@ -114,9 +185,18 @@ namespace cmsis
 		bool empty() const { return size() == 0; }
 		size_t size() const { return internal::message_queue_impl::size(); }
 		size_t capacity() const { return internal::message_queue_impl::capacity(); }
+
+		void reset()
+		{
+			// Avoid memory leak
+			while (!empty())
+				get();
+
+			internal::message_queue_impl::reset();
+		}
 	};
 
-	template <class T> // Partial specialization for pointer
+	template <class T> // Specialization for pointer
 	class message_queue<T, typename std::enable_if<std::is_pointer<T>::value>::type> : private internal::message_queue_impl
 	{
 	public:
@@ -137,27 +217,36 @@ namespace cmsis
 			return *this;
 		}
 
-		void send(element_type ptr)
+		void put(element_type ptr)
 		{
-			internal::message_queue_impl::send(&ptr);
+			internal::message_queue_impl::put(&ptr);
 		}
 
 		template<class Rep, class Period>
-		status send(element_type ptr, const std::chrono::duration<Rep, Period>& wait_time)
+		status put(element_type ptr, const std::chrono::duration<Rep, Period>& wait_time)
 		{
-			return internal::message_queue_impl::send(&ptr, wait_time) ? status::no_timeout : status::timeout;
+			return internal::message_queue_impl::put(&ptr, wait_time) ? status::no_timeout : status::timeout;
 		}
 
-		element_type receive()
-		{
-			return static_cast<element_type>(internal::message_queue_impl::receive());
-		}
-
-		template<class Rep, class Period>
-		status receive(element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
+		element_type get()
 		{
 			void* ptr = nullptr;
-			bool ret = internal::message_queue_impl::receive(ptr, wait_time);
+			internal::message_queue_impl::get(&ptr);
+			return static_cast<element_type>(ptr);
+		}
+
+		void get(element_type& data)
+		{
+			void* ptr = nullptr;
+			bool ret = internal::message_queue_impl::get(&ptr);
+			data = static_cast<element_type>(ptr);
+		}
+
+		template<class Rep, class Period>
+		status get(element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
+		{
+			void* ptr = nullptr;
+			bool ret = internal::message_queue_impl::get(&ptr, wait_time);
 			data = static_cast<element_type>(ptr);
 			return ret ? status::no_timeout : status::timeout;
 		}
@@ -165,6 +254,8 @@ namespace cmsis
 		bool empty() const { return size() == 0; }
 		size_t size() const { return internal::message_queue_impl::size(); }
 		size_t capacity() const { return internal::message_queue_impl::capacity(); }
+
+		void reset() { internal::message_queue_impl::reset(); }
 	};
 
 	template <class T>
@@ -177,4 +268,4 @@ namespace sys
 	using message_queue = cmsis::message_queue<T>;
 }
 
-#endif // CMSIS_MESSAGE_QUEUE_H_INCLUDED
+#endif // CPP_CMSIS_MESSAGE_QUEUE_H_INCLUDED
