@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_OS_H_
-#define CMSIS_OS_H_
+#ifndef CPP_CMSIS_OS_H_
+#define CPP_CMSIS_OS_H_
 
 #include <string>
 #include <functional>
@@ -54,6 +54,12 @@ namespace cmsis
 		/// In case of success, this function will never returns.
 		/// \exception In case of failure, throws a std::system_error exception.
 		void start();
+
+		/// Suspends the RTOS kernel scheduler and thus enables sleep modes.
+		uint32_t suspend() noexcept;
+
+		/// Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
+		void resume(uint32_t sleep_ticks)  noexcept;
 
 		/// Start the idle handler called by the idle thread.
 		/// \exception In case of failure, throws a std::system_error exception.
@@ -96,4 +102,4 @@ namespace sys
 	using dispatch = cmsis::dispatch;
 }
 
-#endif // CMSIS_OS_H_
+#endif // CPP_CMSIS_OS_H_
