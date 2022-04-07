@@ -9,7 +9,7 @@ You must use a C++ compiler that supports the C++11/C++14 standard, like [GNU AR
 Defined in header "Thread.h"
 
 This header is part of the [thread support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<thread>](http://en.cppreference.com/w/cpp/header/thread) interfaces.
-You can directly use [std::thread](http://en.cppreference.com/w/cpp/thread/thread) and [std:&#58;thread::id](http://en.cppreference.com/w/cpp/thread/thread/id) classes, and std::this_thread namespace.
+You can directly use [std::thread](http://en.cppreference.com/w/cpp/thread/thread) and [std::thread&#8203;::id](http://en.cppreference.com/w/cpp/thread/thread/id) classes, and std::this_thread namespace.
 
 Threads are created in a join-able state, with default thread priority (osPriorityNormal) and default stack size from the [Global Memory Pool](https://arm-software.github.io/CMSIS_5/RTOS2/html/theory_of_operation.html#GlobalMemoryPool). See [Thread Management](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__ThreadMgmt.html) for more details.
 
