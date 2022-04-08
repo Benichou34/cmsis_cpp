@@ -8,7 +8,7 @@ You must use a C++ compiler that supports the C++11/C++14 standard, like [GNU AR
 ### Thread
 Defined in header "Thread.h"
 
-This header is part of the [thread support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<thread>](http://en.cppreference.com/w/cpp/header/thread) interfaces.
+This header is part of the [concurrency support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<thread>](http://en.cppreference.com/w/cpp/header/thread) interfaces.
 You can directly use [std::thread](http://en.cppreference.com/w/cpp/thread/thread) and [std::thread&#8203;::id](http://en.cppreference.com/w/cpp/thread/thread/id) classes, and std::this_thread namespace.
 
 Threads are created in a join-able state, with default thread priority (osPriorityNormal) and default stack size from the [Global Memory Pool](https://arm-software.github.io/CMSIS_5/RTOS2/html/theory_of_operation.html#GlobalMemoryPool). See [Thread Management](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__ThreadMgmt.html) for more details.
@@ -16,7 +16,7 @@ Threads are created in a join-able state, with default thread priority (osPriori
 ### Mutex
 Defined in header "Mutex.h"
 
-This header is part of the [thread support](http://en.cppreference.com/w/cpp/thread) library. It provides a partial implementation of STL [<mutex>](http://en.cppreference.com/w/cpp/header/mutex) interfaces.
+This header is part of the [concurrency support](http://en.cppreference.com/w/cpp/thread) library. It provides a partial implementation of STL [<mutex>](http://en.cppreference.com/w/cpp/header/mutex) interfaces.
 You can directly use [std::mutex](http://en.cppreference.com/w/cpp/thread/thread), [std::timed_mutex](http://en.cppreference.com/w/cpp/thread/timed_mutex), [std::recursive_mutex](http://en.cppreference.com/w/cpp/thread/recursive_mutex) and [std::recursive_timed_mutex](http://en.cppreference.com/w/cpp/thread/recursive_timed_mutex) classes.
 [once_flag](http://en.cppreference.com/w/cpp/thread/once_flag) and [call_once](http://en.cppreference.com/w/cpp/thread/call_once) are not implemented yet.
 
@@ -27,7 +27,7 @@ Mutex management functions cannot be called from [Interrupt Service Routines](ht
 ### Semaphore
 Defined in header "Semaphore.h"
 
-This header is part of the [thread support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<semaphore>](https://en.cppreference.com/w/cpp/thread/counting_semaphore) interfaces.
+This header is part of the [concurrency support](http://en.cppreference.com/w/cpp/thread) library. It provides a full implementation of STL [<semaphore>](https://en.cppreference.com/w/cpp/thread/counting_semaphore) interfaces.
 You can directly use [std::counting_semaphore](https://en.cppreference.com/w/cpp/thread/counting_semaphore) and [std::binary_semaphore](https://en.cppreference.com/w/cpp/thread/counting_semaphore) classes.
 
 [Semaphores](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__SemaphoreMgmt.html) are used to manage and protect access to shared resources.
@@ -99,7 +99,7 @@ Defined in header "Memory.h"
 
 [Memory Pools](https://arm-software.github.io/CMSIS_5/RTOS2/html/group__CMSIS__RTOS__PoolMgmt.html) are fixed-size blocks of memory that are thread-safe.
 
-class sys::memory\_pool satisfies [allocator completeness requirements](http://en.cppreference.com/w/cpp/concept/Allocator#Allocator_completeness_requirements) and provides a compatible interface with [std::allocator](http://en.cppreference.com/w/cpp/concept/Allocator) but is not [CopyConstructible](http://en.cppreference.com/w/cpp/concept/CopyConstructible). In consequence, don't try to use this class with STL containers, because this ones aren't designed to works with fixed size allocators.
+class sys::memory\_pool satisfies [allocator completeness requirements](https://en.cppreference.com/w/cpp/named_req/Allocator) and provides a compatible interface with [std::allocator](https://en.cppreference.com/w/cpp/named_req/Allocator) but is not [CopyConstructible](https://en.cppreference.com/w/cpp/named_req/CopyConstructible). In consequence, don't try to use this class with STL containers, because this ones aren't designed to works with fixed size allocators.
 
 class sys::memory\_pool\_delete is a Deleter (like [std::default_delete](http://en.cppreference.com/w/cpp/memory/default_delete)) associated to an memory pool.
  
