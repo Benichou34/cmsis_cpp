@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,45 +34,53 @@ namespace cmsis
 	class cmsis_timer
 	{
 	public:
-		typedef std::function<bool()> callback;
+		typedef std::function<bool()> callback_t;
 
-		cmsis_timer(std::chrono::microseconds usec, callback&& function, bool bOnce) :
+		cmsis_timer(std::chrono::microseconds usec, callback_t&& function, bool bOnce) :
 			m_Callback(std::move(function)),
 			m_id(0),
 			m_usec(usec)
 		{
 			if (!m_Callback)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(osErrorParameter, os_category(), "timer: missing callback");
 #else
 				std::terminate();
 #endif
+			}
 
 			if (m_usec < std::chrono::microseconds::zero())
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(osErrorParameter, os_category(), "base_timed_mutex: negative timer");
 #else
 				std::terminate();
 #endif
+			}
 
 			m_id = osTimerNew(handler, bOnce ? osTimerOnce : osTimerPeriodic, this, NULL);
 			if (m_id == 0)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(osError, os_category(), "osTimerNew");
 #else
 				std::terminate();
 #endif
+			}
 		}
 
 		~cmsis_timer() noexcept(false)
 		{
 			osStatus_t sta = osTimerDelete(m_id);
 			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osTimerDelete", m_id));
 #else
 				std::terminate();
 #endif
+			}
 		}
 
 		void start()
@@ -84,22 +92,26 @@ namespace cmsis
 
 			osStatus_t sta = osTimerStart(m_id, ticks);
 			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osTimerStart", m_id));
 #else
 				std::terminate();
 #endif
+			}
 		}
 
 		void stop()
 		{
 			osStatus_t sta = osTimerStop(m_id);
 			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osTimerStop", m_id));
 #else
 				std::terminate();
 #endif
+			}
 		}
 
 		bool running() const
@@ -123,7 +135,7 @@ namespace cmsis
 		}
 
 	private:
-		callback m_Callback;
+		callback_t m_Callback;
 		osTimerId_t m_id;
 		std::chrono::microseconds m_usec;
 	};
@@ -133,8 +145,8 @@ namespace cmsis
 	{
 	}
 
-	timer::timer(std::chrono::microseconds usec, callback&& function, bool bOnce) :
-		m_pImplTimer(std::make_unique<cmsis_timer>(usec, std::move(function), bOnce))
+	timer::timer(std::chrono::microseconds usec, callback_t&& function, timer_type_t type) :
+		m_pImplTimer(std::make_unique<cmsis_timer>(usec, std::move(function), type == timer_type_t::once ))
 	{
 	}
 
@@ -163,11 +175,13 @@ namespace cmsis
 	void timer::start()
 	{
 		if (!m_pImplTimer)
+		{
 #ifdef __cpp_exceptions
 			throw std::system_error(osErrorResource, os_category(), "timer::start");
 #else
 			std::terminate();
 #endif
+		}
 
 		m_pImplTimer->start();
 	}
@@ -175,11 +189,13 @@ namespace cmsis
 	void timer::stop()
 	{
 		if (!m_pImplTimer)
+		{
 #ifdef __cpp_exceptions
 			throw std::system_error(osErrorResource, os_category(), "timer::stop");
 #else
 			std::terminate();
 #endif
+		}
 
 		m_pImplTimer->stop();
  	}

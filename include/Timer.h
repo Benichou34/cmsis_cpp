@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_TIMER_H_INCLUDED
-#define CMSIS_TIMER_H_INCLUDED
+#ifndef CPP_CMSIS_TIMER_H_INCLUDED
+#define CPP_CMSIS_TIMER_H_INCLUDED
 
 #include <functional>
 #include <chrono>
@@ -39,10 +39,11 @@ namespace cmsis
 	class timer
 	{
 	public:
-		typedef std::function<bool()> callback; // If callback return false, the timer is stopped
+		typedef std::function<bool()> callback_t; // If callback return false, the timer is stopped
+		enum class timer_type_t { once, periodic };
 
 		timer();
-		timer(std::chrono::microseconds usec, callback&& function, bool bOnce = false);
+		timer(std::chrono::microseconds usec, callback_t&& function, timer_type_t type = timer_type_t::periodic);
 		timer(const timer&) = delete;
 		timer(timer&& t);
 		~timer();
@@ -68,4 +69,4 @@ namespace sys
 	using timer = cmsis::timer;
 }
 
-#endif // CMSIS_TIMER_H_INCLUDED
+#endif // CPP_CMSIS_TIMER_H_INCLUDED
