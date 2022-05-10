@@ -28,6 +28,8 @@
 #include "OSException.h"
 #include "cmsis_os2.h"
 
+#ifdef __cpp_exceptions
+
 #ifdef RTE_CMSIS_RTOS2_RTX5
 #include "rtx_os.h"
 #endif
@@ -116,3 +118,4 @@ namespace cmsis
 		}
 	}
 }
+#endif // __cpp_exceptions

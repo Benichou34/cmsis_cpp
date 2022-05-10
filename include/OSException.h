@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,9 @@
 #ifndef CMSIS_OSEXCEPTION_H_
 #define CMSIS_OSEXCEPTION_H_
 
+#include <stdexcept>
+
+#ifdef __cpp_exceptions
 #include <system_error>
 
 namespace cmsis
@@ -41,4 +44,5 @@ namespace cmsis
 	}
 }
 
+#endif // __cpp_exceptions
 #endif // CMSIS_OSEXCEPTION_H_
