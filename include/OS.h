@@ -28,7 +28,6 @@
 #ifndef CPP_CMSIS_OS_H_
 #define CPP_CMSIS_OS_H_
 
-#include <string>
 #include <functional>
 
 namespace cmsis
@@ -39,7 +38,7 @@ namespace cmsis
 		/// Get RTOS Kernel version.
 		/// \return string that contains version information.
 		/// \exception In case of failure, throws a std::system_error exception.
-		std::string version();
+		const char* version();
 
 		/// Get RTOS Kernel tick frequency in Hz.
 		/// \return the frequency of the current RTOS kernel tick.

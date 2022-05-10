@@ -39,9 +39,9 @@ namespace cmsis
 {
 	namespace kernel
 	{
-		std::string version()
+		const char* version()
 		{
-			char infobuf[100];
+			static char infobuf[100];
 			osVersion_t osv;
 
 			osStatus_t sta = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
@@ -54,7 +54,7 @@ namespace cmsis
 #endif
 			}
 
-			return std::string(infobuf);
+			return infobuf;
 		}
 
 		uint32_t tick_frequency()
