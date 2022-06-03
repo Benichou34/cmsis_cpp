@@ -77,9 +77,9 @@ namespace cmsis { namespace internal
 		return *this;
 	}
 
-	void message_queue_impl::put(const void* data)
+	void message_queue_impl::put(const void* data, uint8_t priority)
 	{
-		osStatus_t sta = osMessageQueuePut(m_id, data, 0, osWaitForever);
+		osStatus_t sta = osMessageQueuePut(m_id, data, priority, osWaitForever);
 		if (sta != osOK)
 		{
 #ifdef __cpp_exceptions
@@ -90,7 +90,7 @@ namespace cmsis { namespace internal
 		}
 	}
 
-	bool message_queue_impl::put(const void* data, std::chrono::microseconds usec)
+	mq_status message_queue_impl::put(const void* data, uint8_t priority, std::chrono::microseconds usec)
 	{
 		if (usec < std::chrono::microseconds::zero())
 		{
@@ -105,7 +105,10 @@ namespace cmsis { namespace internal
 		if (timeout > std::numeric_limits<uint32_t>::max())
 			timeout = osWaitForever;
 
-		osStatus_t sta = osMessageQueuePut(m_id, data, 0, timeout);
+		osStatus_t sta = osMessageQueuePut(m_id, data, priority, timeout);
+		if (timeout == 0 && sta == osErrorResource)
+			return mq_status::full;
+
 		if (sta != osOK && sta != osErrorTimeout)
 		{
 #ifdef __cpp_exceptions
@@ -115,7 +118,7 @@ namespace cmsis { namespace internal
 #endif
 		}
 
-		return (sta != osErrorTimeout);
+		return (sta == osOK) ? mq_status::no_timeout : mq_status::timeout;
 	}
 
 	void message_queue_impl::get(void* data)
@@ -131,7 +134,7 @@ namespace cmsis { namespace internal
 		}
 	}
 
-	bool message_queue_impl::get(void* data, std::chrono::microseconds usec)
+	mq_status message_queue_impl::get(void* data, std::chrono::microseconds usec)
 	{
 		if (usec < std::chrono::microseconds::zero())
 		{
@@ -147,6 +150,9 @@ namespace cmsis { namespace internal
 			timeout = osWaitForever;
 
 		osStatus_t sta = osMessageQueueGet(m_id, data, 0, timeout);     // wait for message
+		if (timeout == 0 && sta == osErrorResource)
+			return mq_status::empty;
+
 		if (sta != osOK && sta != osErrorTimeout)
 		{
 #ifdef __cpp_exceptions
@@ -156,7 +162,7 @@ namespace cmsis { namespace internal
 #endif
 		}
 
-		return (sta != osErrorTimeout);
+		return (sta == osOK) ? mq_status::no_timeout : mq_status::timeout;
 	}
 
 	size_t message_queue_impl::size() const
@@ -169,7 +175,7 @@ namespace cmsis { namespace internal
 		return osMessageQueueGetCapacity(m_id);
 	}
 
-	void message_queue_impl::reset()
+	void message_queue_impl::clear()
 	{
 		osStatus_t sta = osMessageQueueReset(m_id);
 		if (sta != osOK)
