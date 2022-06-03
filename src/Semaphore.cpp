@@ -110,6 +110,9 @@ namespace cmsis
 				timeout = osWaitForever;
 
 			osStatus_t sta = osSemaphoreAcquire(m_id, timeout);
+			if (timeout == 0 && sta == osErrorResource)
+				return false;
+
 			if (sta != osOK && sta != osErrorTimeout)
 			{
 #ifdef __cpp_exceptions

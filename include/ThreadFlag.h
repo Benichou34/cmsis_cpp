@@ -44,7 +44,7 @@ namespace cmsis
 		class flags
 		{
 		public:
-			typedef int mask_type;
+			typedef uint32_t mask_type;
 
 			enum class status { no_timeout, timeout };
 			enum class wait_flag : unsigned int

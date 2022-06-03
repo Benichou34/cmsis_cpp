@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -182,13 +182,16 @@ namespace cmsis
 			option |= osFlagsNoClear;
 
 		flagValue = osEventFlagsWait(m_id, mask, option, timeout);
-		if (flagValue < 0 && flagValue != osErrorTimeout)
+		if (timeout == 0 && flagValue == osFlagsErrorResource)
+			return status::timeout;
+
+		if ((flagValue & osFlagsError) && flagValue != osFlagsErrorTimeout)
 #ifdef __cpp_exceptions
 			throw std::system_error(flagValue, flags_category(), internal::str_error("osEventFlagsWait", m_id));
 #else
 			std::terminate();
 #endif
 
-		return (flagValue == osErrorTimeout ? status::timeout : status::no_timeout);
+		return (flagValue == osFlagsErrorTimeout ? status::timeout : status::no_timeout);
 	}
 }

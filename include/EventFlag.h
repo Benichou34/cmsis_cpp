@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ namespace cmsis
 	{
 	public:
 		typedef void* native_handle_type;
-		typedef int mask_type;
+		typedef uint32_t mask_type;
 
 		enum class status { no_timeout, timeout };
 		enum class wait_flag : unsigned int

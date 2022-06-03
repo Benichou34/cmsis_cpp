@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, B. Leforestier
+ * Copyright (c) 2022, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,6 +109,9 @@ namespace cmsis
 				timeout = osWaitForever;
 			
 			osStatus_t sta = osMutexAcquire(m_id, timeout);
+			if (timeout == 0 && sta == osErrorResource)
+				return false;
+
 			if (sta != osOK && sta != osErrorTimeout)
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), internal::str_error("osMutexAcquire", m_id));
