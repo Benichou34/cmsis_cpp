@@ -141,6 +141,11 @@ namespace cmsis
 		std::atomic_bool m_detached;
 	};
 
+	thread::thread() :
+		m_pThread(nullptr)
+	{
+	}
+
 	thread::thread(const attributes& attr, std::unique_ptr<thread::CallableBase> base) :
 		m_pThread(std::make_unique<thread_impl>(attr, std::move(base)))
 	{

@@ -72,7 +72,7 @@ namespace cmsis
 			const char* name;  // name of the thread
 		};
 
-		thread() noexcept = default;
+		thread() noexcept;
 		thread(const thread&) = delete;
 		thread(thread&& __t) noexcept;
 
