@@ -26,77 +26,10 @@
  */
 
 // This following part is specific to CMSIS-RTOS RTX implementation
-#include <new>
 #include <functional>
 #include "rtx_os.h"
 
-extern "C" void*    osRtxMemoryAlloc(void* mem, uint32_t size, uint32_t type);
-extern "C" uint32_t osRtxMemoryFree (void* mem, void* block);
-
 extern std::function<void()> idleHandler;
-
-void* operator new(std::size_t count)
-{
-	void* ptr = osRtxMemoryAlloc(osRtxInfo.mem.common, count, 0U);
-#ifdef __cpp_exceptions
-	if (!ptr)
-		throw std::bad_alloc();
-#endif
-
-	return ptr;
-}
-
-void* operator new[](std::size_t count)
-{
-	void* ptr = osRtxMemoryAlloc(osRtxInfo.mem.common, count, 0U);
-#ifdef __cpp_exceptions
-	if (!ptr)
-		throw std::bad_alloc();
-#endif
-
-	return ptr;
-}
-
-void* operator new( std::size_t count, const std::nothrow_t&) noexcept
-{
-	return osRtxMemoryAlloc(osRtxInfo.mem.common, count, 0U);
-}
-
-void* operator new[]( std::size_t count, const std::nothrow_t&) noexcept
-{
-	return osRtxMemoryAlloc(osRtxInfo.mem.common, count, 0U);
-}
-
-void operator delete(void* ptr) noexcept
-{
-	osRtxMemoryFree(osRtxInfo.mem.common, ptr);
-}
-
-void operator delete[](void* ptr) noexcept
-{
-	osRtxMemoryFree(osRtxInfo.mem.common, ptr);
-}
-
-void operator delete( void* ptr, const std::nothrow_t&) noexcept
-{
-	osRtxMemoryFree(osRtxInfo.mem.common, ptr);
-}
-
-void operator delete[]( void* ptr, const std::nothrow_t&) noexcept
-{
-	osRtxMemoryFree(osRtxInfo.mem.common, ptr);
-}
-
-#if __cplusplus > 201103L
-void operator delete(void* ptr, std::size_t) noexcept
-{
-	osRtxMemoryFree(osRtxInfo.mem.common, ptr);
-}
-
-void operator delete[](void* ptr, std::size_t) noexcept
-{
-	osRtxMemoryFree(osRtxInfo.mem.common, ptr);
-}
 
 // OS Idle Thread
 extern "C" __attribute__((weak)) void osRtxIdleThread(void *argument)
@@ -149,4 +82,4 @@ extern "C" __attribute__((weak))  uint32_t osRtxErrorNotify (uint32_t code, void
 #endif
 	return code;
 }
-#endif
+
