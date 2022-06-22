@@ -141,7 +141,7 @@ namespace cmsis
 		std::atomic_bool m_detached;
 	};
 
-	thread::thread() :
+	thread::thread() noexcept :
 		m_pThread(nullptr)
 	{
 	}
