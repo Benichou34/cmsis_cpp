@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +35,13 @@
 namespace cmsis
 {
 	// mq_status
-	enum class mq_status { no_timeout, timeout, full, empty };
+	enum class mq_status
+	{
+		no_timeout,
+		timeout,
+		full,
+		empty
+	};
 
 	namespace internal
 	{
@@ -66,20 +72,23 @@ namespace cmsis
 		private:
 			void* m_id;
 		};
-	}
+	} // namespace internal
 
 	template <class T> // Default implementation
 	class message_queue : private internal::message_queue_impl
 	{
-		 static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "Only support POD type");
+		static_assert(std::is_standard_layout<T>::value && std::is_trivial<T>::value, "Only support POD type");
 
 	public:
 		typedef T element_type;
-		enum class status { no_timeout, timeout };
 
-		message_queue(size_t max_len) : internal::message_queue_impl(max_len, sizeof(T)) {}
+		message_queue(size_t max_len) :
+			internal::message_queue_impl(max_len, sizeof(T))
+		{}
 		message_queue(const message_queue&) = delete;
-		message_queue(message_queue&& t) : internal::message_queue_impl(std::move(t)) {}
+		message_queue(message_queue&& t) :
+			internal::message_queue_impl(std::move(t))
+		{}
 		~message_queue() = default;
 
 		void swap(message_queue& t) noexcept { internal::message_queue_impl::swap(t); }
@@ -91,18 +100,15 @@ namespace cmsis
 			return *this;
 		}
 
-		void put(const element_type& data, uint8_t priority = 0)
-		{
-			internal::message_queue_impl::put(&data, priority);
-		}
+		void put(const element_type& data, uint8_t priority = 0) { internal::message_queue_impl::put(&data, priority); }
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status put(const element_type& data, uint8_t priority, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			return internal::message_queue_impl::put(&data, priority, wait_time);
 		}
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status put(const element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			return internal::message_queue_impl::put(&data, 0, wait_time);
@@ -115,12 +121,9 @@ namespace cmsis
 			return data;
 		}
 
-		void get(element_type& data)
-		{
-			internal::message_queue_impl::get(&data);
-		}
+		void get(element_type& data) { internal::message_queue_impl::get(&data); }
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status get(element_type& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			return internal::message_queue_impl::get(&data, wait_time);
@@ -137,13 +140,16 @@ namespace cmsis
 	class message_queue<std::unique_ptr<T>> : private internal::message_queue_impl
 	{
 	public:
-		typedef std::unique_ptr<T>::element_type element_type;
-		typedef std::unique_ptr<T>::pointer pointer;
-		enum class status { no_timeout, timeout };
+		typedef typename std::unique_ptr<T>::element_type element_type;
+		typedef typename std::unique_ptr<T>::pointer pointer;
 
-		message_queue(size_t max_len) : internal::message_queue_impl(max_len, sizeof(pointer)) {}
+		message_queue(size_t max_len) :
+			internal::message_queue_impl(max_len, sizeof(pointer))
+		{}
 		message_queue(const message_queue&) = delete;
-		message_queue(message_queue&& t) : internal::message_queue_impl(std::move(t)) {}
+		message_queue(message_queue&& t) :
+			internal::message_queue_impl(std::move(t))
+		{}
 		~message_queue() = default;
 
 		void swap(message_queue& t) noexcept { internal::message_queue_impl::swap(t); }
@@ -161,14 +167,14 @@ namespace cmsis
 			internal::message_queue_impl::put(&ptr, priority);
 		}
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status put(std::unique_ptr<T>&& data, uint8_t priority, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			pointer ptr = data.release();
 			return internal::message_queue_impl::put(&ptr, priority, wait_time);
 		}
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status put(std::unique_ptr<T>&& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			pointer ptr = data.release();
@@ -189,7 +195,7 @@ namespace cmsis
 			data.reset(static_cast<pointer>(ptr));
 		}
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status get(std::unique_ptr<T>& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			void* ptr = nullptr;
@@ -217,12 +223,15 @@ namespace cmsis
 	{
 	public:
 		typedef T element_type;
-		typedef std::add_pointer<element_type>::type pointer;
-		enum class status { no_timeout, timeout };
+		typedef typename std::add_pointer<element_type>::type pointer;
 
-		message_queue(size_t max_len) : internal::message_queue_impl(max_len, sizeof(pointer)) {}
+		message_queue(size_t max_len) :
+			internal::message_queue_impl(max_len, sizeof(pointer))
+		{}
 		message_queue(const message_queue&) = delete;
-		message_queue(message_queue&& t) : internal::message_queue_impl(std::move(t)) {}
+		message_queue(message_queue&& t) :
+			internal::message_queue_impl(std::move(t))
+		{}
 		~message_queue() = default;
 
 		void swap(message_queue& t) noexcept { internal::message_queue_impl::swap(t); }
@@ -234,18 +243,15 @@ namespace cmsis
 			return *this;
 		}
 
-		void put(const pointer& ptr, uint8_t priority = 0)
-		{
-			internal::message_queue_impl::put(&ptr, priority);
-		}
+		void put(const pointer& ptr, uint8_t priority = 0) { internal::message_queue_impl::put(&ptr, priority); }
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status put(const pointer& ptr, uint8_t priority, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			return internal::message_queue_impl::put(&ptr, priority, wait_time);
 		}
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status put(const pointer& ptr, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			return internal::message_queue_impl::put(&ptr, 0, wait_time);
@@ -265,7 +271,7 @@ namespace cmsis
 			data = static_cast<pointer>(ptr);
 		}
 
-		template<class Rep, class Period>
+		template <class Rep, class Period>
 		mq_status get(pointer& data, const std::chrono::duration<Rep, Period>& wait_time)
 		{
 			void* ptr = nullptr;
@@ -281,15 +287,16 @@ namespace cmsis
 		void clear() { internal::message_queue_impl::clear(); }
 	};
 
-	template <class T>
-	inline void	swap(message_queue<T>& __x, message_queue<T>& __y) noexcept { __x.swap(__y); }
-}
+	template <class T> inline void swap(message_queue<T>& __x, message_queue<T>& __y) noexcept
+	{
+		__x.swap(__y);
+	}
+} // namespace cmsis
 
 namespace sys
 {
 	using mq_status = cmsis::mq_status;
-	template<class T>
-	using message_queue = cmsis::message_queue<T>;
-}
+	template <class T> using message_queue = cmsis::message_queue<T>;
+} // namespace sys
 
 #endif // CPP_CMSIS_MESSAGE_QUEUE_H_INCLUDED

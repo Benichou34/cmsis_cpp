@@ -25,50 +25,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef CMSIS_CHRONO_H_
-#define CMSIS_CHRONO_H_
+#ifndef CMSIS_WAITFLAG_H_
+#define CMSIS_WAITFLAG_H_
 
-#include <chrono>
+#include <cstdint>
 
 namespace cmsis
 {
-	namespace chrono
+	enum class wait_flag : uint32_t
 	{
-		struct system_clock
-		{
-			typedef std::chrono::microseconds duration;
-			typedef duration::rep rep;
-			typedef duration::period period;
-			typedef std::chrono::time_point<system_clock, duration> time_point;
-			static constexpr bool is_steady = true;
+		any = 0,     // Wait for any flag
+		all = 1,     // Wait for all flags
+		no_clear = 2 // Do not clear flags which have been specified to wait for
+	};
+}
 
-			static_assert(
-				system_clock::duration::min() < system_clock::duration::zero(),
-				"a clock's minimum duration cannot be less than its epoch");
+inline cmsis::wait_flag operator|(cmsis::wait_flag left, cmsis::wait_flag right)
+{
+	return static_cast<cmsis::wait_flag>(static_cast<uint32_t>(left) | static_cast<uint32_t>(right));
+}
 
-			static time_point now() noexcept;
-			static std::time_t to_time_t(const time_point& t);
-			static time_point from_time_t(std::time_t t);
-		};
+inline cmsis::wait_flag operator|=(cmsis::wait_flag left, cmsis::wait_flag right)
+{
+	left = left | right;
+	return left;
+}
 
-		struct high_resolution_clock
-		{
-			typedef std::chrono::nanoseconds duration;
-			typedef duration::rep rep;
-			typedef duration::period period;
-			typedef std::chrono::time_point<high_resolution_clock, duration> time_point;
-			static constexpr bool is_steady = true;
+inline cmsis::wait_flag operator&(cmsis::wait_flag left, cmsis::wait_flag right)
+{
+	return static_cast<cmsis::wait_flag>(static_cast<uint32_t>(left) & static_cast<uint32_t>(right));
+}
 
-			static time_point now() noexcept;
-		};
-
-		using steady_clock = high_resolution_clock;
-	} // namespace chrono
-} // namespace cmsis
+inline cmsis::wait_flag operator&=(cmsis::wait_flag left, cmsis::wait_flag right)
+{
+	left = left & right;
+	return left;
+}
 
 namespace sys
 {
-	namespace chrono = cmsis::chrono;
+	using wait_flag = cmsis::wait_flag;
 }
 
-#endif // CMSIS_CHRONO_H_
+#endif // CMSIS_WAITFLAG_H_

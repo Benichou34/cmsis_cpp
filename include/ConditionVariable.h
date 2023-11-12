@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,15 +28,19 @@
 #ifndef CMSIS_CONDITION_VARIABLE_H_
 #define CMSIS_CONDITION_VARIABLE_H_
 
-#include <list>
-#include <condition_variable>
 #include "Mutex.h"
 #include "Semaphore.h"
+#include <condition_variable>
+#include <list>
 
 namespace cmsis
 {
 	// cv_status
-	enum class cv_status { no_timeout, timeout };
+	enum class cv_status
+	{
+		no_timeout,
+		timeout
+	};
 
 	// STL like implementation
 	class condition_variable
@@ -52,21 +56,28 @@ namespace cmsis
 		void notify_all() noexcept;
 		void wait(std::unique_lock<cmsis::mutex>& lock);
 
-		template <class Predicate>
-		void wait(std::unique_lock<cmsis::mutex>& lock, Predicate pred)
+		template <class Predicate> void wait(std::unique_lock<cmsis::mutex>& lock, Predicate pred)
 		{
 			while (!pred())
 				wait(lock);
 		}
 
 		template <class Clock, class Duration>
-		cv_status wait_until(std::unique_lock<cmsis::mutex>& lock, const std::chrono::time_point<Clock, Duration>& abs_time)
+		cv_status
+		wait_until(std::unique_lock<cmsis::mutex>& lock, const std::chrono::time_point<Clock, Duration>& abs_time)
 		{
-			return wait_for(lock, abs_time - Clock::now());
+			auto rel_time = abs_time - Clock::now();
+			if (rel_time < std::chrono::microseconds::zero())
+				return cv_status::timeout;
+
+			return wait_for(lock, rel_time);
 		}
 
 		template <class Clock, class Duration, class Predicate>
-		bool wait_until(std::unique_lock<cmsis::mutex>& lock, const std::chrono::time_point<Clock, Duration>& abs_time, Predicate pred)
+		bool wait_until(
+			std::unique_lock<cmsis::mutex>& lock,
+			const std::chrono::time_point<Clock, Duration>& abs_time,
+			Predicate pred)
 		{
 			while (!pred())
 			{
@@ -83,7 +94,10 @@ namespace cmsis
 		}
 
 		template <class Rep, class Period, class Predicate>
-		bool wait_for(std::unique_lock<cmsis::mutex>& lock, const std::chrono::duration<Rep, Period>& rel_time, Predicate pred)
+		bool wait_for(
+			std::unique_lock<cmsis::mutex>& lock,
+			const std::chrono::duration<Rep, Period>& rel_time,
+			Predicate pred)
 		{
 			clock_t::time_point abs_time = clock_t::now() + rel_time;
 
@@ -107,14 +121,14 @@ namespace cmsis
 		cmsis::mutex m_mutex;
 		std::list<cmsis::binary_semaphore*> m_wait;
 	};
-}
+} // namespace cmsis
 
 #if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
 namespace std
 {
 	using cv_status = cmsis::cv_status;
 	using condition_variable = cmsis::condition_variable;
-}
+} // namespace std
 #endif
 
 #endif // CMSIS_CONDITION_VARIABLE_H_

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -125,5 +125,5 @@ namespace cmsis
 		{
 			return osMemoryPoolGetCount(m_id);
 		}
-	}
-}
+	} // namespace internal
+} // namespace cmsis

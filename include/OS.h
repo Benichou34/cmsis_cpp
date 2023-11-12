@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +28,7 @@
 #ifndef CPP_CMSIS_OS_H_
 #define CPP_CMSIS_OS_H_
 
+#include <cstdint>
 #include <functional>
 
 namespace cmsis
@@ -58,12 +59,12 @@ namespace cmsis
 		uint32_t suspend() noexcept;
 
 		/// Enables the RTOS kernel scheduler and thus wakes up the system from sleep mode.
-		void resume(uint32_t sleep_ticks)  noexcept;
+		void resume(uint32_t sleep_ticks) noexcept;
 
 		/// Start the idle handler called by the idle thread.
 		/// \exception In case of failure, throws a std::system_error exception.
 		void set_idle_handler(std::function<void()>&& handler);
-	}
+	} // namespace kernel
 
 	namespace core
 	{
@@ -71,7 +72,7 @@ namespace cmsis
 		/// \return the frequency of the current system core clock.
 		/// \exception In case of failure, throws a std::system_error exception.
 		uint32_t clock_frequency();
-	}
+	} // namespace core
 
 	/// Management of the RTOS Kernel scheduler.
 	/// This class is conform to the C++ BasicLockable concept, and can be used by std::lock_guard.
@@ -92,13 +93,13 @@ namespace cmsis
 	private:
 		int32_t m_previous_lock_state;
 	};
-}
+} // namespace cmsis
 
 namespace sys
 {
 	namespace kernel = cmsis::kernel;
 	namespace core = cmsis::core;
 	using dispatch = cmsis::dispatch;
-}
+} // namespace sys
 
 #endif // CPP_CMSIS_OS_H_

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,13 +26,14 @@
  */
 
 // This following part is specific to CMSIS-RTOS RTX implementation
-#include <functional>
 #include "rtx_os.h"
+#include "OSException.h"
+#include <functional>
 
 extern std::function<void()> idleHandler;
 
 // OS Idle Thread
-extern "C" __attribute__((weak)) void osRtxIdleThread(void *argument)
+extern "C" __attribute__((weak)) void osRtxIdleThread(void* argument)
 {
 	(void)argument;
 	for (;;)
@@ -43,43 +44,46 @@ extern "C" __attribute__((weak)) void osRtxIdleThread(void *argument)
 }
 
 // OS Error Callback function
-extern "C" __attribute__((weak))  uint32_t osRtxErrorNotify (uint32_t code, void *object_id)
+extern "C" __attribute__((weak)) uint32_t osRtxErrorNotify(uint32_t code, void* object_id)
 {
 #ifdef __cpp_exceptions
 	try
 	{
 		throw std::system_error(code, cmsis::os_category(), cmsis::internal::str_error("osRtxErrorNotify", object_id));
 	}
-	catch(std::exception& e)
+	catch (std::exception& e)
 	{
-		for (;;) {}
+		for (;;)
+		{
+		}
 	}
 #else
 	(void)object_id;
 	switch (code)
 	{
 	case osRtxErrorStackOverflow:
-	  // Stack overflow detected for thread (thread_id=object_id)
-	  break;
+		// Stack overflow detected for thread (thread_id=object_id)
+		break;
 	case osRtxErrorISRQueueOverflow:
-	  // ISR Queue overflow detected when inserting object (object_id)
-	  break;
+		// ISR Queue overflow detected when inserting object (object_id)
+		break;
 	case osRtxErrorTimerQueueOverflow:
-	  // User Timer Callback Queue overflow detected for timer (timer_id=object_id)
-	  break;
+		// User Timer Callback Queue overflow detected for timer (timer_id=object_id)
+		break;
 	case osRtxErrorClibSpace:
-	  // Standard C/C++ library libspace not available: increase OS_THREAD_LIBSPACE_NUM
-	  break;
+		// Standard C/C++ library libspace not available: increase OS_THREAD_LIBSPACE_NUM
+		break;
 	case osRtxErrorClibMutex:
-	  // Standard C/C++ library mutex initialization failed
-	  break;
+		// Standard C/C++ library mutex initialization failed
+		break;
 	default:
-	  // Reserved
-	  break;
+		// Reserved
+		break;
 	}
 
-	for (;;) {}
+	for (;;)
+	{
+	}
 #endif
 	return code;
 }
-

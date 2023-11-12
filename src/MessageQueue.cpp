@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,166 +25,173 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <MessageQueue.h>
 #include "OSException.h"
 #include "cmsis_os2.h"
+#include <MessageQueue.h>
 
-namespace cmsis { namespace internal
+namespace cmsis
 {
-	message_queue_impl::message_queue_impl(size_t max_len, size_t ele_len)
-		: m_id(0)
+	namespace internal
 	{
-		m_id = osMessageQueueNew(max_len, ele_len, NULL);
-		if (m_id == 0)
+		message_queue_impl::message_queue_impl(size_t max_len, size_t ele_len) :
+			m_id(0)
 		{
+			m_id = osMessageQueueNew(max_len, ele_len, NULL);
+			if (m_id == 0)
+			{
 #ifdef __cpp_exceptions
-			throw std::system_error(osError, os_category(), "osMessageQueueNew");
+				throw std::system_error(osError, os_category(), "osMessageQueueNew");
 #else
-			std::terminate();
+				std::terminate();
 #endif
+			}
 		}
-	}
 
-	message_queue_impl::message_queue_impl(message_queue_impl&& t)
-		: m_id(t.m_id)
-	{
-		t.m_id = 0;
-	}
-
-	message_queue_impl::~message_queue_impl() noexcept(false)
-	{
-		osStatus_t sta = osMessageQueueDelete(m_id);
-		if (sta != osOK)
+		message_queue_impl::message_queue_impl(message_queue_impl&& t) :
+			m_id(t.m_id)
 		{
-#ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueDelete", m_id));
-#else
-			std::terminate();
-#endif
+			t.m_id = 0;
 		}
-	}
 
-	void message_queue_impl::swap(message_queue_impl& t)
-	{
-		std::swap(m_id, t.m_id);
-	}
+		message_queue_impl::~message_queue_impl() noexcept(false)
+		{
+			osStatus_t sta = osMessageQueueDelete(m_id);
+			if (sta != osOK)
+			{
+#ifdef __cpp_exceptions
+				throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueDelete", m_id));
+#else
+				std::terminate();
+#endif
+			}
+		}
 
-	message_queue_impl& message_queue_impl::operator=(message_queue_impl&& t)
-	{
-		if (&t != this)
+		void message_queue_impl::swap(message_queue_impl& t)
+		{
 			std::swap(m_id, t.m_id);
-
-		return *this;
-	}
-
-	void message_queue_impl::put(const void* data, uint8_t priority)
-	{
-		osStatus_t sta = osMessageQueuePut(m_id, data, priority, osWaitForever);
-		if (sta != osOK)
-		{
-#ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueuePut", m_id));
-#else
-			std::terminate();
-#endif
-		}
-	}
-
-	mq_status message_queue_impl::put(const void* data, uint8_t priority, std::chrono::microseconds usec)
-	{
-		if (usec < std::chrono::microseconds::zero())
-		{
-#ifdef __cpp_exceptions
-			throw std::system_error(osErrorParameter, os_category(), "Data queue: negative timer");
-#else
-			std::terminate();
-#endif
 		}
 
-		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-		if (timeout > std::numeric_limits<uint32_t>::max())
-			timeout = osWaitForever;
-
-		osStatus_t sta = osMessageQueuePut(m_id, data, priority, timeout);
-		if (timeout == 0 && sta == osErrorResource)
-			return mq_status::full;
-
-		if (sta != osOK && sta != osErrorTimeout)
+		message_queue_impl& message_queue_impl::operator=(message_queue_impl&& t)
 		{
-#ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueuePut", m_id));
-#else
-			std::terminate();
-#endif
+			if (&t != this)
+				std::swap(m_id, t.m_id);
+
+			return *this;
 		}
 
-		return (sta == osOK) ? mq_status::no_timeout : mq_status::timeout;
-	}
-
-	void message_queue_impl::get(void* data)
-	{
-		osStatus_t sta = osMessageQueueGet(m_id, data, 0, osWaitForever);     // wait for message
-		if (sta != osOK)
+		void message_queue_impl::put(const void* data, uint8_t priority)
 		{
+			osStatus_t sta = osMessageQueuePut(m_id, data, priority, osWaitForever);
+			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueGet", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osMessageQueuePut", m_id));
 #else
-			std::terminate();
+				std::terminate();
 #endif
-		}
-	}
-
-	mq_status message_queue_impl::get(void* data, std::chrono::microseconds usec)
-	{
-		if (usec < std::chrono::microseconds::zero())
-		{
-#ifdef __cpp_exceptions
-			throw std::system_error(osErrorParameter, os_category(), "Data queue: negative timer");
-#else
-			std::terminate();
-#endif
+			}
 		}
 
-		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
-		if (timeout > std::numeric_limits<uint32_t>::max())
-			timeout = osWaitForever;
-
-		osStatus_t sta = osMessageQueueGet(m_id, data, 0, timeout);     // wait for message
-		if (timeout == 0 && sta == osErrorResource)
-			return mq_status::empty;
-
-		if (sta != osOK && sta != osErrorTimeout)
+		mq_status message_queue_impl::put(const void* data, uint8_t priority, std::chrono::microseconds usec)
 		{
+			if (usec < std::chrono::microseconds::zero())
+			{
 #ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueGet", m_id));
+				throw std::system_error(osErrorParameter, os_category(), "Data queue: negative timer");
 #else
-			std::terminate();
+				std::terminate();
 #endif
+			}
+
+			uint32_t timeout = static_cast<uint32_t>(
+				(usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+				std::chrono::microseconds::period::den);
+			if (timeout > std::numeric_limits<uint32_t>::max())
+				timeout = osWaitForever;
+
+			osStatus_t sta = osMessageQueuePut(m_id, data, priority, timeout);
+			if (timeout == 0 && sta == osErrorResource)
+				return mq_status::full;
+
+			if (sta != osOK && sta != osErrorTimeout)
+			{
+#ifdef __cpp_exceptions
+				throw std::system_error(sta, os_category(), internal::str_error("osMessageQueuePut", m_id));
+#else
+				std::terminate();
+#endif
+			}
+
+			return (sta == osOK) ? mq_status::no_timeout : mq_status::timeout;
 		}
 
-		return (sta == osOK) ? mq_status::no_timeout : mq_status::timeout;
-	}
-
-	size_t message_queue_impl::size() const
-	{
-		return osMessageQueueGetCount(m_id);
-	}
-
-	size_t message_queue_impl::capacity() const
-	{
-		return osMessageQueueGetCapacity(m_id);
-	}
-
-	void message_queue_impl::clear()
-	{
-		osStatus_t sta = osMessageQueueReset(m_id);
-		if (sta != osOK)
+		void message_queue_impl::get(void* data)
 		{
+			osStatus_t sta = osMessageQueueGet(m_id, data, 0, osWaitForever); // wait for message
+			if (sta != osOK)
+			{
 #ifdef __cpp_exceptions
-			throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueReset", m_id));
+				throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueGet", m_id));
 #else
-			std::terminate();
+				std::terminate();
 #endif
+			}
 		}
-	}
-}}
+
+		mq_status message_queue_impl::get(void* data, std::chrono::microseconds usec)
+		{
+			if (usec < std::chrono::microseconds::zero())
+			{
+#ifdef __cpp_exceptions
+				throw std::system_error(osErrorParameter, os_category(), "Data queue: negative timer");
+#else
+				std::terminate();
+#endif
+			}
+
+			uint32_t timeout = static_cast<uint32_t>(
+				(usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+				std::chrono::microseconds::period::den);
+			if (timeout > std::numeric_limits<uint32_t>::max())
+				timeout = osWaitForever;
+
+			osStatus_t sta = osMessageQueueGet(m_id, data, 0, timeout); // wait for message
+			if (timeout == 0 && sta == osErrorResource)
+				return mq_status::empty;
+
+			if (sta != osOK && sta != osErrorTimeout)
+			{
+#ifdef __cpp_exceptions
+				throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueGet", m_id));
+#else
+				std::terminate();
+#endif
+			}
+
+			return (sta == osOK) ? mq_status::no_timeout : mq_status::timeout;
+		}
+
+		size_t message_queue_impl::size() const
+		{
+			return osMessageQueueGetCount(m_id);
+		}
+
+		size_t message_queue_impl::capacity() const
+		{
+			return osMessageQueueGetCapacity(m_id);
+		}
+
+		void message_queue_impl::clear()
+		{
+			osStatus_t sta = osMessageQueueReset(m_id);
+			if (sta != osOK)
+			{
+#ifdef __cpp_exceptions
+				throw std::system_error(sta, os_category(), internal::str_error("osMessageQueueReset", m_id));
+#else
+				std::terminate();
+#endif
+			}
+		}
+	} // namespace internal
+} // namespace cmsis

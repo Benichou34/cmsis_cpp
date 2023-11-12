@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,10 +35,10 @@ namespace cmsis
 	 * Event flag constructor
 	 * @throw std::system_error if an error occurs
 	 */
-	event::event(mask_type mask)
-		: m_id(0)
+	event::event(mask_type mask) :
+		m_id(0)
 	{
-		m_id = osEventFlagsNew(NULL);	
+		m_id = osEventFlagsNew(NULL);
 		if (m_id == 0)
 #ifdef __cpp_exceptions
 			throw std::system_error(osError, os_category(), "osEventFlagsNew");
@@ -50,8 +50,8 @@ namespace cmsis
 			set(mask);
 	}
 
-	event::event(event&& evt) noexcept
-		: m_id(0)
+	event::event(event&& evt) noexcept :
+		m_id(0)
 	{
 		swap(evt);
 	}
@@ -98,7 +98,7 @@ namespace cmsis
 			std::terminate();
 #endif
 
-		return flags;	
+		return flags;
 	}
 
 	/**
@@ -143,8 +143,8 @@ namespace cmsis
 	 */
 	event::mask_type event::wait(mask_type mask, wait_flag flg)
 	{
-		uint32_t option = (static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::any)) ? osFlagsWaitAny : osFlagsWaitAll;
-		if ((static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::clear)) == 0)
+		uint32_t option = ((flg & wait_flag::all) == wait_flag::all) ? osFlagsWaitAll : osFlagsWaitAny;
+		if ((flg & wait_flag::no_clear) == wait_flag::no_clear)
 			option |= osFlagsNoClear;
 
 		int32_t flags = osEventFlagsWait(m_id, mask, option, osWaitForever);
@@ -164,7 +164,8 @@ namespace cmsis
 	 * @return the event flag value
 	 * @throw std::system_error if an error occurs
 	 */
-	event::status event::wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue)
+	event::status
+	event::wait_for_usec(mask_type mask, wait_flag flg, std::chrono::microseconds usec, mask_type& flagValue)
 	{
 		if (usec < std::chrono::microseconds::zero())
 #ifdef __cpp_exceptions
@@ -173,12 +174,14 @@ namespace cmsis
 			std::terminate();
 #endif
 
-		uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
+		uint32_t timeout = static_cast<uint32_t>(
+			(usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+			std::chrono::microseconds::period::den);
 		if (timeout > std::numeric_limits<uint32_t>::max())
 			timeout = osWaitForever;
 
-		uint32_t option = (static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::any)) ? osFlagsWaitAny : osFlagsWaitAll;
-		if ((static_cast<unsigned int>(flg) & static_cast<unsigned int>(wait_flag::clear)) == 0)
+		uint32_t option = ((flg & wait_flag::all) == wait_flag::all) ? osFlagsWaitAll : osFlagsWaitAny;
+		if ((flg & wait_flag::no_clear) == wait_flag::no_clear)
 			option |= osFlagsNoClear;
 
 		flagValue = osEventFlagsWait(m_id, mask, option, timeout);
@@ -194,4 +197,4 @@ namespace cmsis
 
 		return (flagValue == osFlagsErrorTimeout ? status::timeout : status::no_timeout);
 	}
-}
+} // namespace cmsis

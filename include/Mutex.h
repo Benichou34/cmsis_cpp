@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,17 +45,20 @@ namespace cmsis
 			void lock();
 			void unlock();
 			bool try_lock();
-			
-			template<class Rep, class Period>
-			bool try_lock_for(const std::chrono::duration<Rep, Period>& rel_time)
+
+			template <class Rep, class Period> bool try_lock_for(const std::chrono::duration<Rep, Period>& rel_time)
 			{
 				return try_lock_for_usec(rel_time);
 			}
-			
-			template<class Clock, class Duration>
+
+			template <class Clock, class Duration>
 			bool try_lock_until(const std::chrono::time_point<Clock, Duration>& abs_time)
 			{
-				return try_lock_for(abs_time - Clock::now());
+				auto rel_time = abs_time - Clock::now();
+				if (rel_time < std::chrono::microseconds::zero())
+					return false;
+
+				return try_lock_for(rel_time);
 			}
 
 			native_handle_type native_handle() noexcept { return m_id; }
@@ -67,17 +70,19 @@ namespace cmsis
 			bool try_lock_for_usec(std::chrono::microseconds usec);
 
 		private:
-			native_handle_type m_id;                    ///< mutex identifier
+			native_handle_type m_id; ///< mutex identifier
 		};
-	}
-	
+	} // namespace internal
+
 	// STL like implementation
 	class mutex : private internal::base_timed_mutex
 	{
 	public:
 		typedef internal::base_timed_mutex::native_handle_type native_handle_type;
 
-		mutex() : internal::base_timed_mutex("mutex", false) {}
+		mutex() :
+			internal::base_timed_mutex("mutex", false)
+		{}
 		~mutex() = default;
 
 		void lock() { internal::base_timed_mutex::lock(); }
@@ -95,7 +100,9 @@ namespace cmsis
 	public:
 		typedef internal::base_timed_mutex::native_handle_type native_handle_type;
 
-		recursive_mutex() : internal::base_timed_mutex("recursive_mutex", true) {}
+		recursive_mutex() :
+			internal::base_timed_mutex("recursive_mutex", true)
+		{}
 		~recursive_mutex() = default;
 
 		void lock() { internal::base_timed_mutex::lock(); }
@@ -113,20 +120,21 @@ namespace cmsis
 	public:
 		typedef internal::base_timed_mutex::native_handle_type native_handle_type;
 
-		timed_mutex() : internal::base_timed_mutex("timed_mutex", false) {}
+		timed_mutex() :
+			internal::base_timed_mutex("timed_mutex", false)
+		{}
 		~timed_mutex() = default;
 
 		void lock() { internal::base_timed_mutex::lock(); }
 		void unlock() { internal::base_timed_mutex::unlock(); }
 		bool try_lock() { return internal::base_timed_mutex::try_lock(); }
 
-		template<class Rep, class Period>
-		bool try_lock_for(const std::chrono::duration<Rep, Period>& rel_time)
+		template <class Rep, class Period> bool try_lock_for(const std::chrono::duration<Rep, Period>& rel_time)
 		{
 			return internal::base_timed_mutex::try_lock_for(rel_time);
 		}
-		
-		template<class Clock, class Duration>
+
+		template <class Clock, class Duration>
 		bool try_lock_until(const std::chrono::time_point<Clock, Duration>& abs_time)
 		{
 			return internal::base_timed_mutex::try_lock_until(abs_time);
@@ -143,20 +151,21 @@ namespace cmsis
 	public:
 		typedef internal::base_timed_mutex::native_handle_type native_handle_type;
 
-		recursive_timed_mutex() : internal::base_timed_mutex("recursive_timed_mutex", true) {}
+		recursive_timed_mutex() :
+			internal::base_timed_mutex("recursive_timed_mutex", true)
+		{}
 		~recursive_timed_mutex() = default;
 
 		void lock() { internal::base_timed_mutex::lock(); }
 		void unlock() { internal::base_timed_mutex::unlock(); }
 		bool try_lock() { return internal::base_timed_mutex::try_lock(); }
 
-		template<class Rep, class Period>
-		bool try_lock_for(const std::chrono::duration<Rep, Period>& rel_time)
+		template <class Rep, class Period> bool try_lock_for(const std::chrono::duration<Rep, Period>& rel_time)
 		{
 			return internal::base_timed_mutex::try_lock_for(rel_time);
 		}
-		
-		template<class Clock, class Duration>
+
+		template <class Clock, class Duration>
 		bool try_lock_until(const std::chrono::time_point<Clock, Duration>& abs_time)
 		{
 			return internal::base_timed_mutex::try_lock_until(abs_time);
@@ -167,7 +176,7 @@ namespace cmsis
 		recursive_timed_mutex(const recursive_timed_mutex&) = delete;
 		recursive_timed_mutex& operator=(const recursive_timed_mutex&) = delete;
 	};
-}
+} // namespace cmsis
 
 #if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
 namespace std
@@ -176,7 +185,7 @@ namespace std
 	using recursive_mutex = cmsis::recursive_mutex;
 	using timed_mutex = cmsis::timed_mutex;
 	using recursive_timed_mutex = cmsis::recursive_timed_mutex;
-}
+} // namespace std
 #endif
 
 #endif // CMSIS_MUTEX_H_

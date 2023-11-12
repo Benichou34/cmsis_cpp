@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,33 +58,39 @@ namespace cmsis
 		private:
 			native_handle_type m_id;
 		};
-	}
+	} // namespace internal
 
-	template<class T>
-	class memory_pool_delete;
+	template <class T> class memory_pool_delete;
 
 	// This class satisfies allocator completeness requirements.
-	template<class T>
-	class memory_pool : private internal::base_memory_pool
+	template <class T> class memory_pool : private internal::base_memory_pool
 	{
 	public:
 		typedef internal::base_memory_pool Base;
 		typedef typename Base::native_handle_type native_handle_type;
 
-		typedef size_t    size_type;
+		typedef size_t size_type;
 		typedef ptrdiff_t difference_type;
-		typedef T*        pointer;
-		typedef const T*  const_pointer;
-		typedef T&        reference;
-		typedef const T&  const_reference;
-		typedef T         value_type;
+		typedef T* pointer;
+		typedef const T* const_pointer;
+		typedef T& reference;
+		typedef const T& const_reference;
+		typedef T value_type;
 		typedef memory_pool_delete<T> deleter_type;
 
-		memory_pool(size_type count) : Base(count, sizeof(T)) {}
-		memory_pool(memory_pool&& other) : Base(std::move(other)) {}
+		memory_pool(size_type count) :
+			Base(count, sizeof(T))
+		{}
+		memory_pool(memory_pool&& other) :
+			Base(std::move(other))
+		{}
 		~memory_pool() noexcept(false) = default;
 
-		memory_pool& operator=(memory_pool&& other) { Base::operator=(std::move(other)); return *this; }
+		memory_pool& operator=(memory_pool&& other)
+		{
+			Base::operator=(std::move(other));
+			return *this;
+		}
 
 		pointer address(reference x) const noexcept { return std::addressof(x); }
 		const_pointer address(const_reference x) const noexcept { return std::addressof(x); }
@@ -94,24 +100,23 @@ namespace cmsis
 		size_type max_size() const noexcept { return Base::max_size(); }
 		size_type size() const noexcept { return Base::size(); }
 
-		template<class U, class... _Args>
-		void construct(U* p, _Args&&... args) { ::new((void *)p) U(std::forward<_Args>(args)...); }
+		template <class U, class... _Args> void construct(U* p, _Args&&... args)
+		{
+			::new ((void*)p) U(std::forward<_Args>(args)...);
+		}
 
-		template<class U>
-		void destroy(U* p) { p->~U(); }
+		template <class U> void destroy(U* p) { p->~U(); }
 
 		deleter_type get_deleter() noexcept { return deleter_type(*this); }
 
-		template<class... Args>
-		std::unique_ptr<T, deleter_type> make_unique(Args&&... args)
+		template <class... Args> std::unique_ptr<T, deleter_type> make_unique(Args&&... args)
 		{
 			std::unique_ptr<T, deleter_type> ptr(allocate(), get_deleter());
 			construct(ptr.get(), std::forward<Args>(args)...);
 			return ptr;
 		}
 
-		template<class... Args>
-		std::shared_ptr<T> make_shared(Args&&... args)
+		template <class... Args> std::shared_ptr<T> make_shared(Args&&... args)
 		{
 			std::shared_ptr<T> ptr(allocate(), get_deleter());
 			construct(ptr.get(), std::forward<Args>(args)...);
@@ -124,12 +129,15 @@ namespace cmsis
 		memory_pool& operator=(const memory_pool&) = delete;
 	};
 
-	template<class T>
-	class memory_pool_delete
+	template <class T> class memory_pool_delete
 	{
 	public:
-		memory_pool_delete(memory_pool<T>& mempool) : m_mempool(mempool) {}
-		memory_pool_delete(const memory_pool_delete& m) : m_mempool(m.m_mempool) {}
+		memory_pool_delete(memory_pool<T>& mempool) :
+			m_mempool(mempool)
+		{}
+		memory_pool_delete(const memory_pool_delete& m) :
+			m_mempool(m.m_mempool)
+		{}
 		~memory_pool_delete() = default;
 
 		void operator()(void* p) const
@@ -147,29 +155,31 @@ namespace cmsis
 		memory_pool<T>& m_mempool;
 	};
 
-	template<class T>
-	bool operator==(const memory_pool<T>& lhs, const memory_pool<T>& rhs)
-	{ return lhs.native_handle() == rhs.native_handle(); }
+	template <class T> bool operator==(const memory_pool<T>& lhs, const memory_pool<T>& rhs)
+	{
+		return lhs.native_handle() == rhs.native_handle();
+	}
 
-	template<class T>
-	bool operator!=(const memory_pool<T>& lhs, const memory_pool<T>& rhs)
-	{ return lhs.native_handle() != rhs.native_handle(); }
+	template <class T> bool operator!=(const memory_pool<T>& lhs, const memory_pool<T>& rhs)
+	{
+		return lhs.native_handle() != rhs.native_handle();
+	}
 
-	template<class T1, class T2>
-	bool operator==(const memory_pool<T1>& lhs, const memory_pool<T2>& rhs)
-	{ return lhs.native_handle() == rhs.native_handle(); }
+	template <class T1, class T2> bool operator==(const memory_pool<T1>& lhs, const memory_pool<T2>& rhs)
+	{
+		return lhs.native_handle() == rhs.native_handle();
+	}
 
-	template<class T1, class T2>
-	bool operator!=( const memory_pool<T1>& lhs, const memory_pool<T2>& rhs )
-	{ return lhs.native_handle() != rhs.native_handle(); }
-}
+	template <class T1, class T2> bool operator!=(const memory_pool<T1>& lhs, const memory_pool<T2>& rhs)
+	{
+		return lhs.native_handle() != rhs.native_handle();
+	}
+} // namespace cmsis
 
 namespace sys
 {
-	template<class T>
-	using memory_pool = cmsis::memory_pool<T>;
-	template<class T>
-	using memory_pool_delete = cmsis::memory_pool_delete<T>;
-}
+	template <class T> using memory_pool = cmsis::memory_pool<T>;
+	template <class T> using memory_pool_delete = cmsis::memory_pool_delete<T>;
+} // namespace sys
 
 #endif // CMSIS_MEMORY_H_

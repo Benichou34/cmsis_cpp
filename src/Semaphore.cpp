@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -105,7 +105,9 @@ namespace cmsis
 #endif
 			}
 
-			uint32_t timeout = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
+			uint32_t timeout = static_cast<uint32_t>(
+				(usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+				std::chrono::microseconds::period::den);
 			if (timeout > std::numeric_limits<uint32_t>::max())
 				timeout = osWaitForever;
 
@@ -124,5 +126,5 @@ namespace cmsis
 
 			return (sta == osOK);
 		}
-	}
-}
+	} // namespace internal
+} // namespace cmsis

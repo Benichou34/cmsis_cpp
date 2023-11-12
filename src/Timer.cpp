@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -85,8 +85,9 @@ namespace cmsis
 
 		void start()
 		{
-
-			uint32_t ticks = static_cast<uint32_t>((m_usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
+			uint32_t ticks = static_cast<uint32_t>(
+				(m_usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+				std::chrono::microseconds::period::den);
 			if (ticks > std::numeric_limits<uint32_t>::max())
 				ticks = osWaitForever;
 
@@ -114,10 +115,7 @@ namespace cmsis
 			}
 		}
 
-		bool running() const
-		{
-			return osTimerIsRunning(m_id) != 0;
-		}
+		bool running() const { return osTimerIsRunning(m_id) != 0; }
 
 		cmsis_timer(const cmsis_timer&) = delete;
 		cmsis_timer& operator=(const cmsis_timer&) = delete;
@@ -142,18 +140,15 @@ namespace cmsis
 
 	timer::timer() :
 		m_pImplTimer()
-	{
-	}
+	{}
 
 	timer::timer(std::chrono::microseconds usec, callback_t&& function, timer_type_t type) :
-		m_pImplTimer(std::make_unique<cmsis_timer>(usec, std::move(function), type == timer_type_t::once ))
-	{
-	}
+		m_pImplTimer(std::make_unique<cmsis_timer>(usec, std::move(function), type == timer_type_t::once))
+	{}
 
 	timer::timer(timer&& t) :
 		m_pImplTimer(std::move(t.m_pImplTimer))
-	{
-	}
+	{}
 
 	timer& timer::operator=(timer&& t)
 	{
@@ -164,8 +159,7 @@ namespace cmsis
 	}
 
 	timer::~timer()
-	{
-	}
+	{}
 
 	void timer::swap(timer& t) noexcept
 	{
@@ -198,7 +192,7 @@ namespace cmsis
 		}
 
 		m_pImplTimer->stop();
- 	}
+	}
 
 	bool timer::running() const
 	{
@@ -207,4 +201,4 @@ namespace cmsis
 
 		return m_pImplTimer->running();
 	}
-}
+} // namespace cmsis

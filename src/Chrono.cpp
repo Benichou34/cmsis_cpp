@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,18 +25,17 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <type_traits>
 #include "Chrono.h"
 #include "cmsis_os2.h"
+#include <type_traits>
 
 namespace
 {
-	template<class D>
-	D convertDuration(uint64_t count, uint32_t freq)
+	template <class D> D convertDuration(uint64_t count, uint32_t freq)
 	{
 		return D((count * D::period::den) / (freq * D::period::num));
 	}
-}
+} // namespace
 
 namespace cmsis
 {
@@ -60,38 +59,42 @@ namespace cmsis
 
 		high_resolution_clock::time_point high_resolution_clock::now() noexcept
 		{
-			return time_point(convertDuration<high_resolution_clock::duration>(osKernelGetSysTimerCount(), osKernelGetSysTimerFreq()));
+			return time_point(convertDuration<high_resolution_clock::duration>(
+				osKernelGetSysTimerCount(),
+				osKernelGetSysTimerFreq()));
 		}
-	}
-}
+	} // namespace chrono
+} // namespace cmsis
 
 #if !defined(OS_USE_SEMIHOSTING)
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
 #include <sys/time.h>
 
-int _gettimeofday (struct timeval*, void*);
+	int _gettimeofday(struct timeval*, void*);
 
-int _gettimeofday(struct timeval* tp, void* tzvp)
-{
-	if (tp != NULL)
+	int _gettimeofday(struct timeval* tp, void* tzvp)
 	{
-		uint64_t uu = convertDuration<std::chrono::microseconds>(osKernelGetTickCount(), osKernelGetTickFreq()).count();
-		tp->tv_sec = static_cast<time_t>(uu / 1000000);
-		tp->tv_usec = static_cast<long>(uu % 100000);
-	}
+		if (tp != NULL)
+		{
+			uint64_t now =
+				convertDuration<std::chrono::microseconds>(osKernelGetTickCount(), osKernelGetTickFreq()).count();
+			tp->tv_sec = static_cast<time_t>(now / 1000000);
+			tp->tv_usec = static_cast<long>(now % 1000000);
+		}
 
-	if (tzvp != NULL)
-	{
-		struct timezone* tzp = static_cast<struct timezone*>(tzvp);
-		tzp->tz_minuteswest = 0;
-		tzp->tz_dsttime = 0;
-	}
+		if (tzvp != NULL)
+		{
+			struct timezone* tzp = static_cast<struct timezone*>(tzvp);
+			tzp->tz_minuteswest = 0;
+			tzp->tz_dsttime = 0;
+		}
 
-	return 0;
-}
+		return 0;
+	}
 #ifdef __cplusplus
 }
 #endif

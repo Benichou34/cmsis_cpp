@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <mutex>
 #include "Threads.h"
 #include "OS.h"
 #include "cmsis_os2.h"
+#include <mutex>
 
 namespace cmsis
 {
@@ -46,7 +46,7 @@ namespace cmsis
 		uint32_t nb = osThreadEnumerate(thread_array.data(), thread_array.size());
 
 		std::vector<threads::info> infos(nb);
-		for(size_t i = 0; i < infos.size(); ++i)
+		for (size_t i = 0; i < infos.size(); ++i)
 		{
 			osThreadId_t tid = thread_array[i];
 			infos[i].handle = tid;
@@ -59,4 +59,4 @@ namespace cmsis
 
 		return infos;
 	}
-}
+} // namespace cmsis

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,10 +25,10 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <string>
 #include "OS.h"
 #include "OSException.h"
 #include "cmsis_os2.h"
+#include <string>
 
 extern "C" uint32_t SystemCoreClock;         /**< System Clock Frequency (Core Clock) */
 extern "C" void SystemCoreClockUpdate(void); /**< Updates the variable SystemCoreClock */
@@ -45,7 +45,7 @@ namespace cmsis
 			osVersion_t osv;
 
 			osStatus_t sta = osKernelGetInfo(&osv, infobuf, sizeof(infobuf));
-			if(sta != osOK)
+			if (sta != osOK)
 			{
 #ifdef __cpp_exceptions
 				throw std::system_error(sta, os_category(), "osKernelGetInfo");
@@ -135,7 +135,7 @@ namespace cmsis
 		{
 			idleHandler = std::move(handler);
 		}
-	}
+	} // namespace kernel
 
 	namespace core
 	{
@@ -153,15 +153,15 @@ namespace cmsis
 
 			return SystemCoreClock;
 		}
-	}
+	} // namespace core
 
 	/**
 	 * Lock / unlock Dispatching.
 	 * @throw std::system_error if an error occurs
 	 */
-	dispatch::dispatch() : m_previous_lock_state(osError)
-	{
-	}
+	dispatch::dispatch() :
+		m_previous_lock_state(osError)
+	{}
 
 	void dispatch::lock()
 	{
@@ -202,4 +202,4 @@ namespace cmsis
 	{
 		return (osKernelGetState() == osKernelLocked);
 	}
-}
+} // namespace cmsis

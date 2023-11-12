@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,16 +46,19 @@ namespace cmsis
 			void acquire();
 			bool try_acquire() noexcept;
 
-			template<class Rep, class Period>
-			bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time)
+			template <class Rep, class Period> bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time)
 			{
 				return try_acquire_for_usec(std::chrono::duration_cast<std::chrono::microseconds>(rel_time));
 			}
 
-			template<class Clock, class Duration>
+			template <class Clock, class Duration>
 			bool try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time)
 			{
-				return try_acquire_for(abs_time - Clock::now());
+				auto rel_time = abs_time - Clock::now();
+				if (rel_time < std::chrono::microseconds::zero())
+					return false;
+
+				return try_acquire_for(rel_time);
 			}
 
 			native_handle_type native_handle() noexcept { return m_id; }
@@ -67,30 +70,30 @@ namespace cmsis
 			bool try_acquire_for_usec(std::chrono::microseconds usec);
 
 		private:
-			native_handle_type m_id;                    ///< sempahore identifier
+			native_handle_type m_id; ///< sempahore identifier
 		};
-	}
+	} // namespace internal
 
-	template<std::ptrdiff_t LeastMaxValue = 0xFFFFFFFF>
-	class counting_semaphore : private internal::base_semaphore
+	template <std::ptrdiff_t LeastMaxValue = 0xFFFFFFFF> class counting_semaphore : private internal::base_semaphore
 	{
 	public:
 		typedef internal::base_semaphore::native_handle_type native_handle_type;
 
-		constexpr explicit counting_semaphore(std::ptrdiff_t desired) : internal::base_semaphore(max(), desired) {}
+		constexpr explicit counting_semaphore(std::ptrdiff_t desired) :
+			internal::base_semaphore(max(), desired)
+		{}
 		~counting_semaphore() = default;
 
 		void release(std::ptrdiff_t update = 1) { internal::base_semaphore::release(update); }
 		void acquire() { internal::base_semaphore::acquire(); }
 		bool try_acquire() noexcept { return internal::base_semaphore::try_acquire(); }
 
-		template<class Rep, class Period>
-		bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time)
+		template <class Rep, class Period> bool try_acquire_for(const std::chrono::duration<Rep, Period>& rel_time)
 		{
 			return internal::base_semaphore::try_acquire_for(rel_time);
 		}
 
-		template<class Clock, class Duration>
+		template <class Clock, class Duration>
 		bool try_acquire_until(const std::chrono::time_point<Clock, Duration>& abs_time)
 		{
 			return internal::base_semaphore::try_acquire_until(abs_time);
@@ -105,15 +108,15 @@ namespace cmsis
 	};
 
 	using binary_semaphore = counting_semaphore<1>;
-}
+} // namespace cmsis
 
 #if !defined(GLIBCXX_HAS_GTHREADS) && !defined(_GLIBCXX_HAS_GTHREADS)
 namespace std
 {
-	template<std::ptrdiff_t LeastMaxValue = 0xFFFFFFFF>
+	template <std::ptrdiff_t LeastMaxValue = 0xFFFFFFFF>
 	using counting_semaphore = cmsis::counting_semaphore<LeastMaxValue>;
 	using binary_semaphore = cmsis::binary_semaphore;
-}
+} // namespace std
 #endif
 
 #endif // CPP_CMSIS_SEMAPHORE_H_

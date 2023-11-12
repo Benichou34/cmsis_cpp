@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +27,8 @@
 
 #include "ConditionVariable.h"
 #include "OSException.h"
-#include "cmsis_os2.h"
 #include "Semaphore.h"
+#include "cmsis_os2.h"
 
 namespace cmsis
 {
@@ -45,7 +45,7 @@ namespace cmsis
 	void condition_variable::notify_all() noexcept
 	{
 		std::lock_guard<cmsis::mutex> lg(m_mutex);
-		for(auto psema : m_wait)
+		for (auto psema : m_wait)
 			psema->release();
 
 		m_wait.clear();
@@ -53,10 +53,11 @@ namespace cmsis
 
 	void condition_variable::wait(std::unique_lock<cmsis::mutex>& lock)
 	{
-	    wait_for(lock, std::chrono::microseconds::max());
+		wait_for(lock, std::chrono::microseconds::max());
 	}
 
-	cmsis::cv_status condition_variable::wait_for_usec(std::unique_lock<cmsis::mutex>& lock, std::chrono::microseconds usec)
+	cmsis::cv_status
+	condition_variable::wait_for_usec(std::unique_lock<cmsis::mutex>& lock, std::chrono::microseconds usec)
 	{
 		if (!lock.owns_lock())
 			std::terminate();
@@ -81,5 +82,4 @@ namespace cmsis
 
 		return cmsis::cv_status::no_timeout;
 	}
-}
-
+} // namespace cmsis

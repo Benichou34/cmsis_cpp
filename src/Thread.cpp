@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,10 +67,7 @@ namespace cmsis
 		thread_impl(const thread_impl&) = delete;
 		thread_impl& operator=(const thread_impl&) = delete;
 
-		~thread_impl()
-		{
-			osThreadTerminate(m_id);
-		}
+		~thread_impl() { osThreadTerminate(m_id); }
 
 		void join()
 		{
@@ -102,10 +99,7 @@ namespace cmsis
 			m_detached.store(true);
 		}
 
-		bool joinable() const
-		{
-			return !m_detached.load();
-		}
+		bool joinable() const { return !m_detached.load(); }
 
 		osThreadId_t get_id() const noexcept { return m_id; }
 
@@ -121,12 +115,12 @@ namespace cmsis
 #ifdef __cpp_exceptions
 			}
 #ifdef __GNUC__
-			catch(const abi::__forced_unwind&)
+			catch (const abi::__forced_unwind&)
 			{
 				throw;
 			}
 #endif // __GNUC__
-			catch(...)
+			catch (...)
 			{
 				std::terminate();
 			}
@@ -143,17 +137,15 @@ namespace cmsis
 
 	thread::thread() noexcept :
 		m_pThread(nullptr)
-	{
-	}
+	{}
 
 	thread::thread(const attributes& attr, std::unique_ptr<thread::CallableBase> base) :
 		m_pThread(std::make_unique<thread_impl>(attr, std::move(base)))
-	{
-	}
+	{}
 
-	thread::thread(thread&& __t) noexcept : m_pThread(std::move(__t.m_pThread))
-	{
-	}
+	thread::thread(thread&& __t) noexcept :
+		m_pThread(std::move(__t.m_pThread))
+	{}
 
 	thread::~thread()
 	{
@@ -175,7 +167,9 @@ namespace cmsis
 		if (!joinable())
 		{
 #ifdef __cpp_exceptions
-			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::join"); // task is detached (aka auto-delete)
+			throw std::system_error(
+				std::make_error_code(std::errc::invalid_argument),
+				"thread::join"); // task is detached (aka auto-delete)
 #else
 			std::terminate();
 #endif
@@ -203,7 +197,9 @@ namespace cmsis
 		if (!joinable())
 		{
 #ifdef __cpp_exceptions
-			throw std::system_error(std::make_error_code(std::errc::invalid_argument), "thread::detach"); // task is detached (aka auto-delete)
+			throw std::system_error(
+				std::make_error_code(std::errc::invalid_argument),
+				"thread::detach"); // task is detached (aka auto-delete)
 #else
 			std::terminate();
 #endif
@@ -283,14 +279,13 @@ namespace cmsis
 #endif
 		}
 
-		return  static_cast<size_t>(prio);
+		return static_cast<size_t>(prio);
 	}
 
 	const char* thread::name() const noexcept
 	{
 		return osThreadGetName(get_id().m_tid);
 	}
-
 
 	bool thread::is_blocked() const
 	{
@@ -344,11 +339,13 @@ namespace cmsis
 
 		namespace internal
 		{
-			void sleep_for_usec (std::chrono::microseconds usec)
+			void sleep_for_usec(std::chrono::microseconds usec)
 			{
 				if (usec > std::chrono::microseconds::zero())
 				{
-					uint32_t ticks = static_cast<uint32_t>((usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) / std::chrono::microseconds::period::den);
+					uint32_t ticks = static_cast<uint32_t>(
+						(usec.count() * osKernelGetTickFreq() * std::chrono::microseconds::period::num) /
+						std::chrono::microseconds::period::den);
 					if (ticks > std::numeric_limits<uint32_t>::max())
 						ticks = osWaitForever;
 
@@ -363,9 +360,9 @@ namespace cmsis
 					}
 				}
 			}
-		}
-	}
-}
+		} // namespace internal
+	}     // namespace this_thread
+} // namespace cmsis
 
 #if !defined(OS_USE_SEMIHOSTING)
 

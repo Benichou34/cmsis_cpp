@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, B. Leforestier
+ * Copyright (c) 2023, B. Leforestier
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +28,8 @@
 #ifndef CPP_CMSIS_THREADS_H_
 #define CPP_CMSIS_THREADS_H_
 
-#include <vector>
 #include "Thread.h"
+#include <vector>
 
 namespace cmsis
 {
@@ -49,7 +49,7 @@ namespace cmsis
 		static size_t count() noexcept;
 		static std::vector<info> enumerate() noexcept;
 	};
-}
+} // namespace cmsis
 
 namespace sys
 {
